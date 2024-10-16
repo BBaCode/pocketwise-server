@@ -3,9 +3,10 @@ package main
 import (
 	"log"
 	"net/http"
-	"pocketwise/internal/db"
-	"pocketwise/internal/handlers"
-	"pocketwise/pkg/config"
+
+	"github.com/BBaCode/pocketwise-server/lib/config"
+	"github.com/bbacode/pocketwise-server/handlers"
+	"github.com/bbacode/pocketwise-server/internal/db"
 )
 
 func main() {

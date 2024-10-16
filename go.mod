@@ -1,4 +1,4 @@
-module webdev/hello
+module github.com/BBaCode/pocketwise-server
 
 go 1.22.0
 
