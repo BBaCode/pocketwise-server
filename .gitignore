@@ -1,0 +1,40 @@
+# Binaries
+*.exe
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Go specific
+*.log
+*.env       # .env files containing sensitive information
+*.key       # Private keys
+*.pem       # Certificate files
+
+# Dependency directories (auto-generated)
+vendor/
+Gopkg.lock
+Gopkg.toml
+go.sum
+
+# Build output directories
+bin/
+dist/
+build/
+
+# Coverage files
+*.cover
+*.cov
+*.coverage
+
+# IDE and Editor specific
+.idea/
+.vscode/
+*.swp
+*.swo
+*.bak
+
+# OS-specific files
+.DS_Store      # macOS
+Thumbs.db      # Windows
