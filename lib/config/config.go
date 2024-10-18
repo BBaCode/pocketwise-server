@@ -8,10 +8,6 @@ import (
 	"github.com/joho/godotenv"
 )
 
-type Config struct {
-	DB DBConfig
-}
-
 type DBConfig struct {
 	Host     string
 	Port     int
@@ -20,7 +16,7 @@ type DBConfig struct {
 	DBName   string
 }
 
-func LoadConfig() Config {
+func LoadConfig() DBConfig {
 	err := godotenv.Load(".env")
 	if err != nil {
 		log.Fatalf("Error loading .env file: %v", err)
@@ -33,13 +29,11 @@ func LoadConfig() Config {
 	}
 
 	// Return the Config struct populated with values from the environment
-	return Config{
-		DB: DBConfig{
-			Host:     os.Getenv("DB_HOST"),
-			Port:     port,
-			User:     os.Getenv("DB_USER"),
-			Password: os.Getenv("DB_PASSWORD"),
-			DBName:   os.Getenv("DB_NAME"),
-		},
+	return DBConfig{
+		Host:     os.Getenv("DB_HOST"),
+		Port:     port,
+		User:     os.Getenv("DB_USER"),
+		Password: os.Getenv("DB_PASSWORD"),
+		DBName:   os.Getenv("DB_NAME"),
 	}
 }

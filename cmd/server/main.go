@@ -9,12 +9,20 @@ import (
 	"github.com/BBaCode/pocketwise-server/lib/config"
 )
 
+type DBConfig struct {
+	Host     string
+	Port     int
+	User     string
+	Password string
+	DBName   string
+}
+
 func main() {
 	// Load configuration (you can expand this later)
 	cfg := config.LoadConfig()
 
 	// Connect to the database
-	pool, err := db.Connect(cfg.DB)
+	pool, err := db.Connect(db.DBConfig(cfg))
 	if err != nil {
 		log.Fatalf("Unable to connect to database: %v\n", err)
 	}

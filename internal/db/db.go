@@ -7,7 +7,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type Config struct {
+type DBConfig struct {
 	Host     string
 	Port     int
 	User     string
@@ -15,7 +15,7 @@ type Config struct {
 	DBName   string
 }
 
-func Connect(cfg Config) (*pgxpool.Pool, error) {
+func Connect(cfg DBConfig) (*pgxpool.Pool, error) {
 	connString := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s",
 		cfg.Host, cfg.Port, cfg.User, cfg.Password, cfg.DBName)
 
