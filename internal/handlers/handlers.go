@@ -12,7 +12,7 @@ import (
 
 type Credentials struct {
 	Email    string `json:"email"`
-	Password string `json:"pw"`
+	Password string `json:"password"`
 }
 
 type Response struct {
@@ -21,6 +21,17 @@ type Response struct {
 }
 
 func HandleRequest(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool) {
+
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	// Handle preflight OPTIONS request
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "Failed to read request body", http.StatusBadRequest)
