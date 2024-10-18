@@ -15,3 +15,5 @@ require (
 	golang.org/x/sync v0.8.0 // indirect
 	golang.org/x/text v0.18.0 // indirect
 )
+
+replace github.com/BBaCode/pocketwise-server => ../pocketwise-server
