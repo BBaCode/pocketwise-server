@@ -4,9 +4,9 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/BBaCode/pocketwise-server/internal/db"
+	"github.com/BBaCode/pocketwise-server/internal/handlers"
 	"github.com/BBaCode/pocketwise-server/lib/config"
-	"github.com/bbacode/pocketwise-server/handlers"
-	"github.com/bbacode/pocketwise-server/internal/db"
 )
 
 func main() {
