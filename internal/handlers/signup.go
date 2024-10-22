@@ -7,20 +7,11 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/BBaCode/pocketwise-server/internal/models"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type Credentials struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
-type Response struct {
-	Status  string `json:"status"`
-	Message string `json:"message"`
-}
-
-func HandleRequest(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool) {
+func HandleUserSignUp(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool) {
 
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE")
@@ -38,7 +29,7 @@ func HandleRequest(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool) {
 		return
 	}
 
-	var creds Credentials
+	var creds models.Credentials
 	err = json.Unmarshal(body, &creds)
 	if err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
@@ -48,9 +39,10 @@ func HandleRequest(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool) {
 	fmt.Println("Email:", creds.Email)
 	fmt.Println("Password:", creds.Password)
 
-	resp := Response{
-		Status:  "success",
-		Message: "You found me!",
+	// we're setting this before doing the insert so would need to be changed in case of a fail
+	resp := models.Response{
+		Status:  "Success",
+		Message: "User with email" + creds.Email + "successfully signed up",
 	}
 
 	jsonData, err := json.Marshal(resp)
@@ -59,7 +51,7 @@ func HandleRequest(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool) {
 		return
 	}
 
-	if len(creds.Email) > 0 {
+	if len(creds.Email) > 0 && len(creds.Password) > 0 {
 		query := `INSERT INTO public.users (email, password_hash) VALUES ($1, $2)`
 		_, err = pool.Exec(context.Background(), query, creds.Email, creds.Password)
 		if err != nil {

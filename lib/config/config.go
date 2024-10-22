@@ -5,18 +5,11 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/BBaCode/pocketwise-server/internal/models"
 	"github.com/joho/godotenv"
 )
 
-type DBConfig struct {
-	Host     string
-	Port     int
-	User     string
-	Password string
-	DBName   string
-}
-
-func LoadConfig() DBConfig {
+func LoadConfig() models.DBConfig {
 	err := godotenv.Load("../../.env")
 	if err != nil {
 		log.Fatalf("Error loading .env file: %v", err)
@@ -29,7 +22,7 @@ func LoadConfig() DBConfig {
 	}
 
 	// Return the Config struct populated with values from the environment
-	return DBConfig{
+	return models.DBConfig{
 		Host:     os.Getenv("DB_HOST"),
 		Port:     port,
 		User:     os.Getenv("DB_USER"),

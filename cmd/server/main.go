@@ -7,15 +7,8 @@ import (
 	"github.com/BBaCode/pocketwise-server/internal/db"
 	"github.com/BBaCode/pocketwise-server/internal/handlers"
 	"github.com/BBaCode/pocketwise-server/lib/config"
+	"github.com/gorilla/mux"
 )
-
-type DBConfig struct {
-	Host     string
-	Port     int
-	User     string
-	Password string
-	DBName   string
-}
 
 func main() {
 	// Load configuration (you can expand this later)
@@ -28,10 +21,18 @@ func main() {
 	}
 	defer pool.Close() // Ensure the connection is closed when you're done
 
+	r := mux.NewRouter()
+
+	http.Handle("/", r)
+
 	// Set up handlers
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		handlers.HandleRequest(w, r, pool)
-	})
+	r.HandleFunc("/signup", func(w http.ResponseWriter, r *http.Request) {
+		handlers.HandleUserSignUp(w, r, pool)
+	}).Methods("POST")
+
+	r.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
+		handlers.HandleUserLogin(w, r, pool)
+	}).Methods("POST")
 
 	log.Println("Server starting on :80")
 	if err := http.ListenAndServe(":80", nil); err != nil {
