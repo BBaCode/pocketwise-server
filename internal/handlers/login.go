@@ -7,7 +7,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/BBaCode/pocketwise-server/internal/models"
+	"github.com/BBaCode/pocketwise-server/models"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 

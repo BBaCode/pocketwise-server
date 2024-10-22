@@ -5,7 +5,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/BBaCode/pocketwise-server/internal/models"
+	"github.com/BBaCode/pocketwise-server/models"
 	"github.com/joho/godotenv"
 )
 
