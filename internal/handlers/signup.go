@@ -14,7 +14,7 @@ import (
 func HandleUserSignUp(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool) {
 
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 
 	// Handle preflight OPTIONS request
@@ -42,7 +42,7 @@ func HandleUserSignUp(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool
 	// we're setting this before doing the insert so would need to be changed in case of a fail
 	resp := models.Response{
 		Status:  "Success",
-		Message: "User with email" + creds.Email + "successfully signed up",
+		Message: "User with email " + creds.Email + " successfully signed up",
 	}
 
 	jsonData, err := json.Marshal(resp)

@@ -7,6 +7,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/joho/godotenv"
 )
 
 // Account represents the structure of account data
@@ -23,9 +25,18 @@ type AccountResponse struct {
 }
 
 func HandleGetAccounts(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
 	req, err := http.NewRequest("GET", fmt.Sprintf("%s/accounts", "https://beta-bridge.simplefin.org/simplefin"), nil)
 	if err != nil {
 		log.Fatalf("Failed to create request: %v", err)
+	}
+
+	err = godotenv.Load("../../.env")
+	if err != nil {
+		log.Fatalf("Error loading .env file: %v", err)
 	}
 
 	req.SetBasicAuth(os.Getenv("SIMPLE_FIN_USERNAME"), os.Getenv("SIMPLE_FIN_PASSWORD")) // Split username and password
@@ -33,7 +44,7 @@ func HandleGetAccounts(w http.ResponseWriter, r *http.Request) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Fatalf("Failed to get accounts: %v", err)
+		http.Error(w, "Failed to get accounts", http.StatusForbidden)
 	}
 	defer resp.Body.Close()
 
@@ -51,5 +62,11 @@ func HandleGetAccounts(w http.ResponseWriter, r *http.Request) {
 	// Print account data
 	for _, account := range accountsResponse.Accounts {
 		fmt.Printf("Account ID: %s, Name: %s, Balance: %s", account.ID, account.Name, account.Balance)
+	}
+
+	// Send JSON response to the client
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(accountsResponse); err != nil {
+		http.Error(w, "Failed to send accounts response", http.StatusInternalServerError)
 	}
 }
