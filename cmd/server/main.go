@@ -41,6 +41,10 @@ func main() {
 		handlers.HandleGetAccounts(w, r)
 	}).Methods("GET")
 
+	r.HandleFunc("/transactions", func(w http.ResponseWriter, r *http.Request) {
+		handlers.HandleGetTransactions(w, r)
+	}).Methods("POST")
+
 	log.Println("Server starting on :80")
 	if err := http.ListenAndServe(":80", r); err != nil {
 		log.Fatalf("ListenAndServe failed: %v\n", err)
