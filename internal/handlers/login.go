@@ -36,6 +36,7 @@ func HandleUserLogin(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool)
 		return
 	}
 
+	fmt.Println("Logged in with: ")
 	fmt.Println("Email:", creds.Email)
 	fmt.Println("Password:", creds.Password)
 
