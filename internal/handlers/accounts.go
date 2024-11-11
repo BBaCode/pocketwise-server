@@ -9,33 +9,9 @@ import (
 	"os"
 	"time"
 
+	"github.com/BBaCode/pocketwise-server/models"
 	"github.com/joho/godotenv"
 )
-
-type Transaction struct {
-	ID           string `json:"id"`
-	Posted       int    `json:"posted"`
-	Amount       string `json:"amount"`
-	Description  string `json:"description"`
-	Payee        string `json:"payee"`
-	Memo         string `json:"memo"`
-	TransactedAt int    `json:"transacted_at"`
-}
-
-// Account represents the structure of account data
-type Account struct {
-	ID               string        `json:"id"`
-	Name             string        `json:"name"`
-	Balance          string        `json:"balance"`
-	BalanceDate      int           `json:"balance-date"`
-	AvailableBalance string        `json:"available-balance"`
-	Transactions     []Transaction `json:"transactions"`
-}
-
-// Response represents the structure of the accounts response
-type AccountResponse struct {
-	Accounts []Account `json:"accounts"`
-}
 
 func getLast30DaysTimestamp() int64 {
 	// Get the current time
@@ -80,9 +56,23 @@ func HandleGetAccounts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Read and parse the response
-	var accountsResponse AccountResponse
+	var accountsResponse models.AccountResponse
 	if err := json.NewDecoder(resp.Body).Decode(&accountsResponse); err != nil {
 		log.Fatalf("Failed to decode accounts response: %v", err)
+	}
+
+	for i, account := range accountsResponse.Accounts {
+		// Assume each account has a list of transactions (you may need to retrieve this separately if not included)
+		for j, transaction := range account.Transactions {
+			// Categorize the transaction
+			categorizedTransaction, err := CategorizeTransaction(transaction)
+			if err != nil {
+				log.Printf("Error categorizing transaction for account %s: %v", account.ID, err)
+				categorizedTransaction.Category = "Uncategorized"
+			}
+			// Update the transaction with categorized data
+			accountsResponse.Accounts[i].Transactions[j] = categorizedTransaction
+		}
 	}
 
 	// Print account data
