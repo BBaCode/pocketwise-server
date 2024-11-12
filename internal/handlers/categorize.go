@@ -31,7 +31,7 @@ func CategorizeTransaction(transaction models.Transaction) (models.Transaction, 
 	}
 
 	prompt := fmt.Sprintf(
-		"You are a transaction categorizer. Classify the following transactions into one of these categories: %v. If it's unclear, categorize as 'Other'.\n",
+		"You are a transaction categorizer. Classify each transaction into only one of these categories: %v. If it's unclear, categorize it as 'Other'. Respond with only the category name, without any extra words or punctuation.",
 		categories,
 	)
 
