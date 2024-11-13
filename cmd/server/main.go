@@ -4,9 +4,9 @@ import (
 	"log"
 	"net/http"
 
+	config "github.com/BBaCode/pocketwise-server/internal/app"
+	"github.com/BBaCode/pocketwise-server/internal/app/handlers"
 	"github.com/BBaCode/pocketwise-server/internal/db"
-	"github.com/BBaCode/pocketwise-server/internal/handlers"
-	"github.com/BBaCode/pocketwise-server/lib/config"
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 )
