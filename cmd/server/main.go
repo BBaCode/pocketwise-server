@@ -1,12 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
+	config "github.com/BBaCode/pocketwise-server/internal/app"
+	"github.com/BBaCode/pocketwise-server/internal/app/handlers"
 	"github.com/BBaCode/pocketwise-server/internal/db"
-	"github.com/BBaCode/pocketwise-server/internal/handlers"
-	"github.com/BBaCode/pocketwise-server/lib/config"
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 )
@@ -30,6 +31,7 @@ func main() {
 
 	// Set up handlers
 	r.HandleFunc("/signup", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Print("hit signup correctly")
 		handlers.HandleUserSignUp(w, r, pool)
 	}).Methods("POST", "OPTIONS")
 
@@ -41,13 +43,18 @@ func main() {
 		handlers.HandleGetAccounts(w, r)
 	}).Methods("GET")
 
-	// this can likely just be handled in the /accounts handler
-	// r.HandleFunc("/transactions", func(w http.ResponseWriter, r *http.Request) {
-	// 	handlers.HandleGetTransactions(w, r)
-	// }).Methods("POST")
+	r.HandleFunc("/new-accounts", func(w http.ResponseWriter, r *http.Request) {
+		handlers.HandleAddAccounts(w, r)
+	}).Methods("GET")
+
+	r.HandleFunc("/transactions", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Print("hit this correctly")
+		handlers.HandleGetTransactions(w, r)
+	}).Methods("POST", "OPTIONS")
 
 	log.Println("Server starting on :80")
 	if err := http.ListenAndServe(":80", r); err != nil {
 		log.Fatalf("ListenAndServe failed: %v\n", err)
 	}
+
 }
