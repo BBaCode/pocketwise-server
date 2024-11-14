@@ -41,10 +41,14 @@ func main() {
 		handlers.HandleGetAccounts(w, r)
 	}).Methods("GET")
 
+	r.HandleFunc("/accounts", func(w http.ResponseWriter, r *http.Request) {
+		handlers.HandlePostAccounts(w, r)
+	}).Methods("POST")
+
 	// this can likely just be handled in the /accounts handler
-	// r.HandleFunc("/transactions", func(w http.ResponseWriter, r *http.Request) {
-	// 	handlers.HandleGetTransactions(w, r)
-	// }).Methods("POST")
+	r.HandleFunc("/transactions", func(w http.ResponseWriter, r *http.Request) {
+		handlers.HandleGetTransactions(w, r)
+	}).Methods("GET")
 
 	log.Println("Server starting on :80")
 	if err := http.ListenAndServe(":80", r); err != nil {
