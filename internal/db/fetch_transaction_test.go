@@ -14,7 +14,7 @@ func TestFetchExistingTransaction(t *testing.T) {
 	}
 
 	// Call FetchExistingTransaction
-	categorizedTransactions, err := FetchExistingTransactions()
+	categorizedTransactions, err := FetchExistingTransactions("ACT-17dbc9ca-ce58-4d16-b4f1-f8edc1dd7364")
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
 	}
@@ -34,7 +34,7 @@ func TestFetchMostRecentTransaction(t *testing.T) {
 	}
 
 	// Call FetchMostRecentTransaction
-	mostRecentTransaction, err := FetchMostRecentTransaction()
+	mostRecentTransaction, err := FetchMostRecentTransaction("ACT-17dbc9ca-ce58-4d16-b4f1-f8edc1dd7364")
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
 	}

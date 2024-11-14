@@ -11,7 +11,7 @@ import (
 	openai "github.com/sashabaranov/go-openai"
 )
 
-func CategorizeTransaction(transaction models.Transaction) (models.Transaction, error) {
+func CategorizeTransaction(transaction *models.Transaction) (models.Transaction, error) {
 
 	err := godotenv.Load("../../.env")
 	if err != nil {

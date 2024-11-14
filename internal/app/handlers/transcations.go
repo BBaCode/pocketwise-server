@@ -7,39 +7,39 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"time"
 
+	"github.com/BBaCode/pocketwise-server/internal/app"
+	"github.com/BBaCode/pocketwise-server/internal/db"
 	"github.com/BBaCode/pocketwise-server/models"
 	"github.com/joho/godotenv"
 )
-
-func getLast30DaysTimestamp() int64 {
-	// Get the current time
-	now := time.Now()
-
-	// Subtract 30 days (in hours) from the current time
-	last30Days := now.AddDate(0, 0, -30)
-
-	// Return the Unix timestamp in seconds
-	return last30Days.Unix()
-}
 
 func HandleGetTransactions(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 
-	// startDate, err := db.FetchMostRecentTransaction()
-	// if err != nil {
-	// 	log.Fatalf("Failed to get most recent transaction: %s", err)
-	// }
+	// Parse the JSON body
+	var reqBody models.AccountRequest
+	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+		http.Error(w, "Invalid JSON body", http.StatusBadRequest)
+		return
+	}
 
-	// req, err := http.NewRequest("GET", fmt.Sprintf("https://beta-bridge.simplefin.org/simplefin/accounts?start-date=%d", startDate), nil)
-	// if err != nil {
-	// 	log.Fatalf("Failed to create request: %v", err)
-	// }
+	// Check if the account parameter is present
+	account := reqBody.Account
+	if account == "" {
+		http.Error(w, "Missing 'account' parameter in request body", http.StatusBadRequest)
+		return
+	}
 
-	req, err := http.NewRequest("GET", fmt.Sprintf("https://beta-bridge.simplefin.org/simplefin/accounts"), nil)
+	startDate, err := db.FetchMostRecentTransaction(reqBody.Account)
+	if err != nil {
+		http.Error(w, "Something went wrong. Please try again later.", http.StatusInternalServerError)
+		log.Fatalf("Failed to get successful response from FetchMostRecentTransaction: %s", err)
+	}
+
+	req, err := http.NewRequest("GET", fmt.Sprintf("https://beta-bridge.simplefin.org/simplefin/accounts?start-date=%d&account=%s", startDate, reqBody.Account), nil)
 	if err != nil {
 		log.Fatalf("Failed to create request: %v", err)
 	}
@@ -54,13 +54,13 @@ func HandleGetTransactions(w http.ResponseWriter, r *http.Request) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		http.Error(w, "Failed to get accounts", http.StatusForbidden)
+		http.Error(w, "Failed to get account", http.StatusForbidden)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		log.Fatalf("Failed to get accounts: %s", body)
+		log.Fatalf("Failed to get account: %s", body)
 	}
 
 	// Read and parse the response
@@ -69,28 +69,46 @@ func HandleGetTransactions(w http.ResponseWriter, r *http.Request) {
 		log.Fatalf("Failed to decode accounts response: %v", err)
 	}
 
-	// for i, account := range accountsResponse.Accounts {
-	// 	// Assume each account has a list of transactions (you may need to retrieve this separately if not included)
-	// 	for j, transaction := range account.Transactions {
-	// 		// Categorize the transaction
-	// 		categorizedTransaction, err := app.CategorizeTransaction(transaction)
-	// 		if err != nil {
-	// 			log.Printf("Error categorizing transaction for account %s: %v", account.ID, err)
-	// 			categorizedTransaction.Category = "Uncategorized"
-	// 		}
-	// 		// Update the transaction with categorized data
-	// 		accountsResponse.Accounts[i].Transactions[j] = categorizedTransaction
-	// 	}
-	// }
+	var accForTxns *models.Account
+	for _, account := range accountsResponse.Accounts {
+		if account.ID == reqBody.Account {
+			accForTxns = &account
+			break
+		}
+	}
 
-	// Print account data
-	// for _, account := range accountsResponse.Accounts {
-	// 	fmt.Printf("Account ID: %s, Name: %s, Balance: %s", account.ID, account.Name, account.Balance)
-	// }
+	// Check if the account was found
+	if accForTxns != nil {
+		fmt.Printf("Found accounts: %+v\n", *accForTxns)
+	} else {
+		fmt.Println("Accounts not found")
+	}
+
+	var categorizedTxns []models.Transaction
+	// categorize transactions and append them to a new array to send to database
+	for _, txn := range accForTxns.Transactions {
+		txn, err = app.CategorizeTransaction(&txn)
+		txn.AccountID = reqBody.Account
+		if err != nil {
+			log.Fatalf("Failed to categorize transactions with error: %s", err)
+		}
+		categorizedTxns = append(categorizedTxns, txn)
+	}
+
+	// insert new transactions into the database
+	err = db.InsertNewTransactions(categorizedTxns)
+	if err != nil {
+		log.Fatalf("Failed to insert transactions with error: %s", err)
+	}
+
+	updatedTxns, err := db.FetchExistingTransactions(accForTxns.ID)
+	if err != nil {
+		log.Fatalf("Failed to fetch transactions with error: %s", err)
+	}
 
 	// Send JSON response to the client
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(accountsResponse); err != nil {
+	if err := json.NewEncoder(w).Encode(updatedTxns); err != nil {
 		http.Error(w, "Failed to send accounts response", http.StatusInternalServerError)
 	}
 }
