@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
@@ -30,6 +31,7 @@ func main() {
 
 	// Set up handlers
 	r.HandleFunc("/signup", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Print("hit signup correctly")
 		handlers.HandleUserSignUp(w, r, pool)
 	}).Methods("POST", "OPTIONS")
 
@@ -41,14 +43,14 @@ func main() {
 		handlers.HandleGetAccounts(w, r)
 	}).Methods("GET")
 
-	r.HandleFunc("/accounts", func(w http.ResponseWriter, r *http.Request) {
-		handlers.HandlePostAccounts(w, r)
-	}).Methods("POST")
-
-	// this can likely just be handled in the /accounts handler
-	r.HandleFunc("/transactions", func(w http.ResponseWriter, r *http.Request) {
-		handlers.HandleGetTransactions(w, r)
+	r.HandleFunc("/new-accounts", func(w http.ResponseWriter, r *http.Request) {
+		handlers.HandleAddAccounts(w, r)
 	}).Methods("GET")
+
+	r.HandleFunc("/transactions", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Print("hit this correctly")
+		handlers.HandleGetTransactions(w, r)
+	}).Methods("POST", "OPTIONS")
 
 	log.Println("Server starting on :80")
 	if err := http.ListenAndServe(":80", r); err != nil {
