@@ -38,7 +38,7 @@ func InsertNewAccounts(account models.StoredAccount) error {
 
 ///////////////// TRANSACTIONS //////////////////////
 
-func FetchExistingTransactions(accountId string) (map[string]models.Transaction, error) {
+func FetchExistingTransactions(accountId string) ([]models.Transaction, error) {
 
 	logger := log.Default()
 	// Load configuration (you can expand this later)
@@ -62,7 +62,7 @@ func FetchExistingTransactions(accountId string) (map[string]models.Transaction,
 		log.Fatalf("Failed to get transactions: %s", err)
 	}
 	logger.Println(rows)
-	transactions := make(map[string]models.Transaction)
+	transactions := []models.Transaction{}
 	rowCount := 0
 
 	// get all transactions and map them to the transaction map
@@ -73,7 +73,7 @@ func FetchExistingTransactions(accountId string) (map[string]models.Transaction,
 		if err != nil {
 			return nil, err
 		}
-		transactions[txn.ID] = txn // Use ID as a map key for easy lookups
+		transactions = append(transactions, txn) // Use ID as a map key for easy lookups
 	}
 	log.Printf("Number of transactions fetched: %d", rowCount)
 

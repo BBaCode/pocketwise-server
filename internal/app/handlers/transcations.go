@@ -16,12 +16,19 @@ import (
 
 func HandleGetTransactions(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	fmt.Print(r.Method)
+	// Handle preflight OPTIONS request
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
 
 	// Parse the JSON body
 	var reqBody models.AccountRequest
 	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+		fmt.Printf("Bad request: %s", err)
 		http.Error(w, "Invalid JSON body", http.StatusBadRequest)
 		return
 	}
