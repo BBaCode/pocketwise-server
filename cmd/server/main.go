@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 
@@ -31,7 +30,6 @@ func main() {
 
 	// Set up handlers
 	r.HandleFunc("/signup", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Print("hit signup correctly")
 		handlers.HandleUserSignUp(w, r, pool)
 	}).Methods("POST", "OPTIONS")
 
@@ -48,7 +46,6 @@ func main() {
 	}).Methods("GET")
 
 	r.HandleFunc("/transactions", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Print("hit this correctly")
 		handlers.HandleGetTransactions(w, r)
 	}).Methods("POST", "OPTIONS")
 

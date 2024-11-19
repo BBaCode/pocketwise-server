@@ -9,10 +9,10 @@ import (
 
 	"github.com/BBaCode/pocketwise-server/models"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func HandleUserSignUp(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool) {
-
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
@@ -23,12 +23,15 @@ func HandleUserSignUp(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool
 		return
 	}
 
+	// Read the request body
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "Failed to read request body", http.StatusBadRequest)
 		return
 	}
+	defer r.Body.Close()
 
+	// Parse the JSON input
 	var creds models.Credentials
 	err = json.Unmarshal(body, &creds)
 	if err != nil {
@@ -36,29 +39,27 @@ func HandleUserSignUp(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool
 		return
 	}
 
-	fmt.Println("Email:", creds.Email)
-	fmt.Println("Password:", creds.Password)
-
-	// we're setting this before doing the insert so would need to be changed in case of a fail
-	resp := models.Response{
-		Status:  "Success",
-		Message: "User with email " + creds.Email + " successfully signed up",
-	}
-
-	jsonData, err := json.Marshal(resp)
+	// Hash the password using bcrypt
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(creds.Password), bcrypt.DefaultCost)
 	if err != nil {
-		http.Error(w, "Failed to marshal response", http.StatusInternalServerError)
+		http.Error(w, "Failed to hash password", http.StatusInternalServerError)
 		return
 	}
 
-	if len(creds.Email) > 0 && len(creds.Password) > 0 {
-		query := `INSERT INTO public.users (email, password_hash) VALUES ($1, $2)`
-		_, err = pool.Exec(context.Background(), query, creds.Email, creds.Password)
-		if err != nil {
-			http.Error(w, "Failed to insert user", http.StatusInternalServerError)
-			return
-		}
+	// Insert the user into the database
+	query := `INSERT INTO public.users (email, password_hash) VALUES ($1, $2)`
+	_, err = pool.Exec(context.Background(), query, creds.Email, string(hashedPassword))
+	if err != nil {
+		http.Error(w, "Failed to insert user into database", http.StatusInternalServerError)
+		return
 	}
 
-	w.Write(jsonData)
+	// Success response
+	resp := models.Response{
+		Status:  "Success",
+		Message: fmt.Sprintf("User with email %s successfully signed up", creds.Email),
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resp)
 }
