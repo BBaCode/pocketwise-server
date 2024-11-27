@@ -15,7 +15,6 @@ import (
 	"github.com/golang-jwt/jwt/v5" // Import JWT library
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
-	"golang.org/x/crypto/bcrypt"
 )
 
 func HandleUserLogin(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool) {
@@ -38,14 +37,14 @@ func HandleUserLogin(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool)
 	defer r.Body.Close()
 
 	// Parse the JSON input
-	var creds models.Credentials
-	err = json.Unmarshal(body, &creds)
+	var userDetails models.SignupRequest
+	err = json.Unmarshal(body, &userDetails)
 	if err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
 		return
 	}
 
-	if len(creds.Email) == 0 || len(creds.Password) == 0 {
+	if len(userDetails.Email) == 0 {
 		http.Error(w, "Email and password are required", http.StatusBadRequest)
 		return
 	}
@@ -53,21 +52,14 @@ func HandleUserLogin(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool)
 	// Fetch the stored hash for the provided email
 	query := `SELECT password_hash FROM public.users WHERE email=$1`
 	var storedHash string
-	err = pool.QueryRow(context.Background(), query, creds.Email).Scan(&storedHash)
-	if err != nil {
-		http.Error(w, "Invalid email or password", http.StatusUnauthorized)
-		return
-	}
-
-	// Compare the provided password with the stored hash
-	err = bcrypt.CompareHashAndPassword([]byte(storedHash), []byte(creds.Password))
+	err = pool.QueryRow(context.Background(), query, userDetails.Email).Scan(&storedHash)
 	if err != nil {
 		http.Error(w, "Invalid email or password", http.StatusUnauthorized)
 		return
 	}
 
 	// Generate a JWT token upon successful login
-	token, err := generateJWT(creds.Email)
+	token, err := generateJWT(userDetails.Email)
 	if err != nil {
 		fmt.Print(err)
 		http.Error(w, "Failed to generate token", http.StatusInternalServerError)
