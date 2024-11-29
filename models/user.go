@@ -7,6 +7,13 @@ type SignupRequest struct {
 	LastName  string `json:"last_name"`
 }
 
+type LoginRequest struct {
+	Id string `json:"id"`
+}
+
+type LoginResponse struct {
+}
+
 type Response struct {
 	Status  string `json:"status"`
 	Message string `json:"message"`
