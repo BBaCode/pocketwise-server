@@ -6,31 +6,30 @@ import (
 	"log"
 	"time"
 
-	config "github.com/BBaCode/pocketwise-server/internal/app"
 	"github.com/BBaCode/pocketwise-server/models"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 )
 
-func InsertNewAccounts(account models.StoredAccount) error {
-	// Load configuration (you can expand this later)
-	cfg := config.LoadConfig()
+func InsertNewAccounts(account models.StoredAccount, pool *pgxpool.Pool) error {
+
 	err := godotenv.Load("../../.env")
 	if err != nil {
 		log.Fatalf("Error loading .env file: %v", err)
 	}
-	// Connect to the database
-	pool, err := Connect(DBConfig(cfg))
-	if err != nil {
-		log.Fatalf("Unable to connect to database: %v\n", err)
-	}
-	defer pool.Close() // Ensure the connection is closed when you're done
 
 	query := `INSERT INTO public.accounts (id, user_id, name, account_type, currency, balance, available_balance, balance_date, org_name) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`
-	_, err = pool.Exec(context.Background(), query, account.ID, account.UserId, account.Name, account.AccountType, account.Currency, account.Balance, account.AvailableBalance, account.BalanceDate, account.Org.Name)
+	result, err := pool.Exec(context.Background(), query, account.ID, account.UserId, account.Name, account.AccountType, account.Currency, account.Balance, account.AvailableBalance, account.BalanceDate, account.Org.Name)
 	if err != nil {
-		log.Fatalf("Unable to insert new accounts into database: %v\n", err)
+		log.Printf("Unable to insert new account into database: %v\n", err)
 		return err
+	}
+	rowsAffected := result.RowsAffected()
+	log.Printf("Rows affected: %d\n", rowsAffected)
+
+	if rowsAffected == 0 {
+		log.Println("No rows were inserted. Check your query or data.")
 	}
 
 	return nil
@@ -38,25 +37,16 @@ func InsertNewAccounts(account models.StoredAccount) error {
 
 ///////////////// TRANSACTIONS //////////////////////
 
-func FetchExistingTransactions(accountId string) ([]models.Transaction, error) {
+func FetchExistingTransactions(accountId string, pool *pgxpool.Pool) ([]models.Transaction, error) {
 
 	logger := log.Default()
 	// Load configuration (you can expand this later)
-	cfg := config.LoadConfig()
 	err := godotenv.Load("../../.env")
 	if err != nil {
 		log.Fatalf("Error loading .env file: %v", err)
 	}
 
-	// Connect to the database
-	pool, err := Connect(DBConfig(cfg))
-	if err != nil {
-		log.Fatalf("Unable to connect to database: %v\n", err)
-	}
-	defer pool.Close() // Ensure the connection is closed when you're done
-
 	query := `SELECT * FROM public.transactions WHERE account_id = $1`
-
 	rows, err := pool.Query(context.Background(), query, accountId)
 	if err != nil {
 		log.Fatalf("Failed to get transactions: %s", err)
@@ -81,20 +71,12 @@ func FetchExistingTransactions(accountId string) ([]models.Transaction, error) {
 
 }
 
-func FetchMostRecentTransaction(accountId string) (int64, error) {
-
-	// Load configuration (you can expand this later)
-	cfg := config.LoadConfig()
+func FetchMostRecentTransaction(accountId string, pool *pgxpool.Pool) (int64, error) {
 	err := godotenv.Load("../../.env")
 	if err != nil {
 		log.Fatalf("Error loading .env file: %v", err)
 	}
-	// Connect to the database
-	pool, err := Connect(DBConfig(cfg))
-	if err != nil {
-		log.Fatalf("Unable to connect to database: %v\n", err)
-	}
-	defer pool.Close() // Ensure the connection is closed when you're done
+
 	var lastTransactionDate *int64
 	err = pool.QueryRow(context.Background(), "SELECT MAX(transacted_at) FROM public.transactions WHERE account_id = $1", accountId).Scan(&lastTransactionDate)
 	if err == pgx.ErrNoRows || lastTransactionDate == nil {
@@ -120,19 +102,11 @@ func getLast30DaysTimestamp() int64 {
 	return last30Days.Unix()
 }
 
-func InsertNewTransactions(txns []models.Transaction) error {
-	// Load configuration (you can expand this later)
-	cfg := config.LoadConfig()
+func InsertNewTransactions(txns []models.Transaction, pool *pgxpool.Pool) error {
 	err := godotenv.Load("../../.env")
 	if err != nil {
 		log.Fatalf("Error loading .env file: %v", err)
 	}
-	// Connect to the database
-	pool, err := Connect(DBConfig(cfg))
-	if err != nil {
-		log.Fatalf("Unable to connect to database: %v\n", err)
-	}
-	defer pool.Close() // Ensure the connection is closed when you're done
 
 	for _, txn := range txns {
 		// Check if transaction ID already exists

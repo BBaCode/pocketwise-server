@@ -11,10 +11,11 @@ import (
 	"github.com/BBaCode/pocketwise-server/internal/app"
 	"github.com/BBaCode/pocketwise-server/internal/db"
 	"github.com/BBaCode/pocketwise-server/models"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 )
 
-func HandleGetTransactions(w http.ResponseWriter, r *http.Request) {
+func HandleGetTransactions(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
@@ -40,7 +41,7 @@ func HandleGetTransactions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	startDate, err := db.FetchMostRecentTransaction(reqBody.Account)
+	startDate, err := db.FetchMostRecentTransaction(reqBody.Account, pool)
 	if err != nil {
 		http.Error(w, "Something went wrong. Please try again later.", http.StatusInternalServerError)
 		log.Fatalf("Failed to get successful response from FetchMostRecentTransaction: %s", err)
@@ -103,12 +104,12 @@ func HandleGetTransactions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// insert new transactions into the database
-	err = db.InsertNewTransactions(categorizedTxns)
+	err = db.InsertNewTransactions(categorizedTxns, pool)
 	if err != nil {
 		log.Fatalf("Failed to insert transactions with error: %s", err)
 	}
 
-	updatedTxns, err := db.FetchExistingTransactions(accForTxns.ID)
+	updatedTxns, err := db.FetchExistingTransactions(accForTxns.ID, pool)
 	if err != nil {
 		log.Fatalf("Failed to fetch transactions with error: %s", err)
 	}
