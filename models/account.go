@@ -43,9 +43,9 @@ type StoredAccount struct {
 	AccountType      string    `json:"account_type"`
 	Currency         string    `json:"currency"`
 	Balance          string    `json:"balance"`
-	BalanceDate      int64     `json:"balance-date"`
 	AvailableBalance string    `json:"available-balance"`
 	Org              Org       `json:"org"`
+	BalanceDate      int64     `json:"balance-date"`
 }
 
 type Org struct {

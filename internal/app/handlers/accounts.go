@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -22,6 +23,12 @@ func HandleGetAccounts(w http.ResponseWriter, r *http.Request, pool *pgxpool.Poo
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
+	// Handle preflight OPTIONS request
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
 	userID := r.Header.Get("X-User-ID")
 	if userID == "" {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
@@ -41,17 +48,15 @@ func HandleGetAccounts(w http.ResponseWriter, r *http.Request, pool *pgxpool.Poo
 	}
 
 	// CONTINUE HERE
-	db.FetchExistingAccounts(userUUID, pool)
-
-	// Read and parse the response
-	var accountsResponse models.AccountResponse
-	if err := json.NewDecoder(resp.Body).Decode(&accountsResponse); err != nil {
-		log.Fatalf("Failed to decode accounts response: %v", err)
+	var fetchedAccounts []models.StoredAccount
+	fetchedAccounts, err = db.FetchExistingAccounts(userUUID, pool)
+	if err != nil {
+		fmt.Printf("Unexpected error fetching existing accounts: %v", err)
 	}
 
 	// Send JSON response to the client
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(accountsResponse); err != nil {
+	if err := json.NewEncoder(w).Encode(fetchedAccounts); err != nil {
 		http.Error(w, "Failed to send accounts response", http.StatusInternalServerError)
 	}
 }

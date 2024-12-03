@@ -39,9 +39,9 @@ func main() {
 	}).Methods("POST", "OPTIONS")
 
 	// Protected routes (With JWT validation)
-	r.HandleFunc("/accounts", func(w http.ResponseWriter, r *http.Request) {
+	r.Handle("/accounts", middleware.ValidateJWT(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		handlers.HandleGetAccounts(w, r, pool)
-	}).Methods("GET")
+	}))).Methods("GET", "OPTIONS")
 
 	r.Handle("/new-accounts", middleware.ValidateJWT(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		handlers.HandleAddAccounts(w, r, pool)

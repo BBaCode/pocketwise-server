@@ -25,23 +25,32 @@ func FetchExistingAccounts(userId uuid.UUID, pool *pgxpool.Pool) ([]models.Store
 	query := `SELECT * FROM public.accounts WHERE user_id = $1`
 	rows, err := pool.Query(context.Background(), query, userId)
 	if err != nil {
-		log.Fatalf("Failed to get transactions: %s", err)
+		log.Fatalf("Failed to get accounts: %s", err)
 	}
 	logger.Println(rows)
 	accounts := []models.StoredAccount{}
 	rowCount := 0
 
-	// get all transactions and map them to the transaction map
+	// get all accounts and map them to the transaction map
 	for rows.Next() {
-		rowCount++
+		// storing these values as numeric in the database, even though they return from the simplefin as strings
+		// this does a conversion to allow us to store them as strings again after getting back from the db
+		// Maybe update the DB instead?
+		var (
+			balance          float64
+			availableBalance float64
+		)
 		var acc models.StoredAccount
-		err := rows.Scan(&acc.ID, &acc.UserId, &acc.Name, &acc.AccountType, &acc.Currency, &acc.Balance, &acc.BalanceDate, &acc.AvailableBalance, &acc.Org)
+		err := rows.Scan(&acc.ID, &acc.UserId, &acc.Name, &acc.AccountType, &acc.Currency, &balance, &availableBalance, &acc.Org.Name, &acc.BalanceDate)
 		if err != nil {
 			return nil, err
 		}
-		accounts = append(accounts, acc) // Use ID as a map key for easy lookups
+		acc.Balance = fmt.Sprintf("%.2f", balance)
+		acc.AvailableBalance = fmt.Sprintf("%.2f", availableBalance)
+		accounts = append(accounts, acc)
+		rowCount++
 	}
-	log.Printf("Number of transactions fetched: %d", rowCount)
+	log.Printf("Number of accounts fetched: %d", rowCount)
 
 	return accounts, nil
 
@@ -54,8 +63,8 @@ func InsertNewAccounts(account models.StoredAccount, pool *pgxpool.Pool) error {
 		log.Fatalf("Error loading .env file: %v", err)
 	}
 
-	query := `INSERT INTO public.accounts (id, user_id, name, account_type, currency, balance, available_balance, balance_date, org_name) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`
-	result, err := pool.Exec(context.Background(), query, account.ID, account.UserId, account.Name, account.AccountType, account.Currency, account.Balance, account.AvailableBalance, account.BalanceDate, account.Org.Name)
+	query := `INSERT INTO public.accounts (id, user_id, name, account_type, currency, balance, available_balance, org_name, balance_date) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`
+	result, err := pool.Exec(context.Background(), query, account.ID, account.UserId, account.Name, account.AccountType, account.Currency, account.Balance, account.AvailableBalance, account.Org.Name, account.BalanceDate)
 	if err != nil {
 		log.Printf("Unable to insert new account into database: %v\n", err)
 		return err
