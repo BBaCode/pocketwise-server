@@ -47,6 +47,10 @@ func main() {
 		handlers.HandleAddAccounts(w, r, pool)
 	}))).Methods("GET")
 
+	r.Handle("/all-transactions", middleware.ValidateJWT(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		handlers.HandleGetAllTransactions(w, r, pool)
+	}))).Methods("GET", "POST", "OPTIONS")
+
 	r.Handle("/transactions", middleware.ValidateJWT(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		handlers.HandleGetTransactions(w, r, pool)
 	}))).Methods("POST", "OPTIONS")

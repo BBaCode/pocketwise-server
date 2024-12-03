@@ -81,6 +81,41 @@ func InsertNewAccounts(account models.StoredAccount, pool *pgxpool.Pool) error {
 
 ///////////////// TRANSACTIONS //////////////////////
 
+// Fetches every single transaction in the db. Will want to update this to fetch by userId
+func FetchAllTransactions(pool *pgxpool.Pool) ([]models.Transaction, error) {
+
+	logger := log.Default()
+	// Load configuration (you can expand this later)
+	err := godotenv.Load("../../.env")
+	if err != nil {
+		log.Fatalf("Error loading .env file: %v", err)
+	}
+
+	query := `SELECT * FROM public.transactions`
+	rows, err := pool.Query(context.Background(), query)
+	if err != nil {
+		log.Fatalf("Failed to get transactions: %s", err)
+	}
+	logger.Println(rows)
+	transactions := []models.Transaction{}
+	rowCount := 0
+
+	// get all transactions and map them to the transaction map
+	for rows.Next() {
+		rowCount++
+		var txn models.Transaction
+		err := rows.Scan(&txn.ID, &txn.AccountID, &txn.Amount, &txn.Description, &txn.Payee, &txn.Memo, &txn.Category, &txn.TransactedAt, &txn.Posted)
+		if err != nil {
+			return nil, err
+		}
+		transactions = append(transactions, txn) // Use ID as a map key for easy lookups
+	}
+	log.Printf("Number of transactions fetched: %d", rowCount)
+
+	return transactions, nil
+
+}
+
 func FetchExistingTransactions(accountId string, pool *pgxpool.Pool) ([]models.Transaction, error) {
 
 	logger := log.Default()

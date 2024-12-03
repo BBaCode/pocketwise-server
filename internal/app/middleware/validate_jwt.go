@@ -11,6 +11,11 @@ import (
 // Middleware to validate JWT
 func ValidateJWT(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/all-transactions" {
+			fmt.Println("Method:", r.Method)
+			fmt.Println("Path:", r.URL.Path)
+			fmt.Println("Headers:", r.Header)
+		}
 		// Handle CORS preflight - without this, server was preventing subsequent calls
 		if r.Method == http.MethodOptions {
 			w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -21,7 +26,8 @@ func ValidateJWT(next http.Handler) http.Handler {
 		}
 
 		authHeader := r.Header.Get("Authorization")
-		if authHeader == "" {
+		if len(authHeader) == 0 {
+			fmt.Println("Auth header is missing")
 			http.Error(w, "Authorization header missing", http.StatusUnauthorized)
 			return
 		}
