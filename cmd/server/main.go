@@ -47,9 +47,9 @@ func main() {
 		handlers.HandleAddAccounts(w, r, pool)
 	}))).Methods("GET")
 
-	r.HandleFunc("/transactions", func(w http.ResponseWriter, r *http.Request) {
+	r.Handle("/transactions", middleware.ValidateJWT(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		handlers.HandleGetTransactions(w, r, pool)
-	}).Methods("POST", "OPTIONS")
+	}))).Methods("POST", "OPTIONS")
 
 	log.Println("Server starting on :80")
 	if err := http.ListenAndServe(":80", r); err != nil {
