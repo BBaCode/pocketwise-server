@@ -3,7 +3,6 @@ package app
 import (
 	"log"
 	"os"
-	"strconv"
 
 	"github.com/BBaCode/pocketwise-server/models"
 	"github.com/joho/godotenv"
@@ -15,18 +14,13 @@ func LoadConfig() models.DBConfig {
 		log.Fatalf("Error loading .env file: %v", err)
 	}
 
-	// Parse the DB_PORT as an integer
-	port, err := strconv.Atoi(os.Getenv("DB_PORT"))
-	if err != nil {
-		log.Fatalf("Invalid DB_PORT value in .env: %v", err)
+	// Get the Supabase connection string
+	connString := os.Getenv("SUPABASE_DB_URL")
+	if connString == "" {
+		log.Fatalf("SUPABASE_DB_URL is not set in .env")
 	}
 
-	// Return the Config struct populated with values from the environment
 	return models.DBConfig{
-		Host:     os.Getenv("DB_HOST"),
-		Port:     port,
-		User:     os.Getenv("DB_USER"),
-		Password: os.Getenv("DB_PASSWORD"),
-		DBName:   os.Getenv("DB_NAME"),
+		ConnectionString: connString,
 	}
 }

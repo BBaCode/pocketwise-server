@@ -11,17 +11,56 @@ import (
 	"github.com/BBaCode/pocketwise-server/internal/app"
 	"github.com/BBaCode/pocketwise-server/internal/db"
 	"github.com/BBaCode/pocketwise-server/models"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 )
 
-func HandleGetTransactions(w http.ResponseWriter, r *http.Request) {
+func HandleGetAllTransactions(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+	fmt.Print(r.Method)
+
+	// Extract user ID from request header (set by middleware)
+	userID := r.Header.Get("X-User-ID")
+	if userID == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	// TODO: have a fetch for most recent transaction by userId instead of account
+	// startDate, err := db.FetchMostRecentTransaction(reqBody.Account, pool)
+	// if err != nil {
+	// 	http.Error(w, "Something went wrong. Please try again later.", http.StatusInternalServerError)
+	// 	log.Fatalf("Failed to get successful response from FetchMostRecentTransaction: %s", err)
+	// }
+
+	err := godotenv.Load("../../.env")
+	if err != nil {
+		log.Fatalf("Error loading .env file: %v", err)
+	}
+
+	updatedTxns, err := db.FetchAllTransactions(pool)
+	if err != nil {
+		log.Fatalf("Failed to fetch transactions with error: %s", err)
+	}
+
+	// Send JSON response to the client
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(updatedTxns); err != nil {
+		http.Error(w, "Failed to send accounts response", http.StatusInternalServerError)
+	}
+}
+
+func HandleGetTransactions(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-	fmt.Print(r.Method)
-	// Handle preflight OPTIONS request
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(http.StatusOK)
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+	// Extract user ID from request header (set by middleware)
+	userID := r.Header.Get("X-User-ID")
+	if userID == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
@@ -40,7 +79,7 @@ func HandleGetTransactions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	startDate, err := db.FetchMostRecentTransaction(reqBody.Account)
+	startDate, err := db.FetchMostRecentTransaction(reqBody.Account, pool)
 	if err != nil {
 		http.Error(w, "Something went wrong. Please try again later.", http.StatusInternalServerError)
 		log.Fatalf("Failed to get successful response from FetchMostRecentTransaction: %s", err)
@@ -103,12 +142,12 @@ func HandleGetTransactions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// insert new transactions into the database
-	err = db.InsertNewTransactions(categorizedTxns)
+	err = db.InsertNewTransactions(categorizedTxns, pool)
 	if err != nil {
 		log.Fatalf("Failed to insert transactions with error: %s", err)
 	}
 
-	updatedTxns, err := db.FetchExistingTransactions(accForTxns.ID)
+	updatedTxns, err := db.FetchExistingTransactions(accForTxns.ID, pool)
 	if err != nil {
 		log.Fatalf("Failed to fetch transactions with error: %s", err)
 	}

@@ -2,23 +2,30 @@ package db
 
 import (
 	"context"
-	"fmt"
+	"log"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type DBConfig struct {
-	Host     string
-	Port     int
-	User     string
-	Password string
-	DBName   string
+	ConnectionString string
 }
 
 func Connect(cfg DBConfig) (*pgxpool.Pool, error) {
-	connString := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s",
-		cfg.Host, cfg.Port, cfg.User, cfg.Password, cfg.DBName)
+	// Parse the connection string into a pgxpool.Config
+	poolConfig, err := pgxpool.ParseConfig(cfg.ConnectionString)
+	if err != nil {
+		log.Fatalf("Failed to parse pool config: %v", err)
+	}
 
+	// Set PreferSimpleProtocol to true for compatibility with certain queries
+	poolConfig.ConnConfig.DefaultQueryExecMode = pgx.QueryExecModeSimpleProtocol
+	// Create a new connection pool with the customized configuration
 	ctx := context.Background()
-	return pgxpool.New(ctx, connString)
+	pool, err := pgxpool.NewWithConfig(ctx, poolConfig)
+	if err != nil {
+		log.Fatalf("Failed to create pool: %v", err)
+	}
+	return pool, nil
 }

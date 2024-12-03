@@ -6,31 +6,74 @@ import (
 	"log"
 	"time"
 
-	config "github.com/BBaCode/pocketwise-server/internal/app"
 	"github.com/BBaCode/pocketwise-server/models"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 )
 
-func InsertNewAccounts(account models.StoredAccount) error {
+func FetchExistingAccounts(userId uuid.UUID, pool *pgxpool.Pool) ([]models.StoredAccount, error) {
+
+	logger := log.Default()
 	// Load configuration (you can expand this later)
-	cfg := config.LoadConfig()
 	err := godotenv.Load("../../.env")
 	if err != nil {
 		log.Fatalf("Error loading .env file: %v", err)
 	}
-	// Connect to the database
-	pool, err := Connect(DBConfig(cfg))
-	if err != nil {
-		log.Fatalf("Unable to connect to database: %v\n", err)
-	}
-	defer pool.Close() // Ensure the connection is closed when you're done
 
-	query := `INSERT INTO public.accounts (id, user_id, name, account_type, currency, balance, available_balance, balance_date, org_name) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`
-	_, err = pool.Exec(context.Background(), query, account.ID, account.UserId, account.Name, account.AccountType, account.Currency, account.Balance, account.AvailableBalance, account.BalanceDate, account.Org.Name)
+	query := `SELECT * FROM public.accounts WHERE user_id = $1`
+	rows, err := pool.Query(context.Background(), query, userId)
 	if err != nil {
-		log.Fatalf("Unable to insert new accounts into database: %v\n", err)
+		log.Fatalf("Failed to get accounts: %s", err)
+	}
+	logger.Println(rows)
+	accounts := []models.StoredAccount{}
+	rowCount := 0
+
+	// get all accounts and map them to the transaction map
+	for rows.Next() {
+		// storing these values as numeric in the database, even though they return from the simplefin as strings
+		// this does a conversion to allow us to store them as strings again after getting back from the db
+		// Maybe update the DB instead?
+		var (
+			balance          float64
+			availableBalance float64
+		)
+		var acc models.StoredAccount
+		err := rows.Scan(&acc.ID, &acc.UserId, &acc.Name, &acc.AccountType, &acc.Currency, &balance, &availableBalance, &acc.Org.Name, &acc.BalanceDate)
+		if err != nil {
+			return nil, err
+		}
+		acc.Balance = fmt.Sprintf("%.2f", balance)
+		acc.AvailableBalance = fmt.Sprintf("%.2f", availableBalance)
+		accounts = append(accounts, acc)
+		rowCount++
+	}
+	log.Printf("Number of accounts fetched: %d", rowCount)
+
+	return accounts, nil
+
+}
+
+func InsertNewAccounts(account models.StoredAccount, pool *pgxpool.Pool) error {
+
+	err := godotenv.Load("../../.env")
+	if err != nil {
+		log.Fatalf("Error loading .env file: %v", err)
+	}
+
+	query := `INSERT INTO public.accounts (id, user_id, name, account_type, currency, balance, available_balance, org_name, balance_date) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`
+	result, err := pool.Exec(context.Background(), query, account.ID, account.UserId, account.Name, account.AccountType, account.Currency, account.Balance, account.AvailableBalance, account.Org.Name, account.BalanceDate)
+	if err != nil {
+		log.Printf("Unable to insert new account into database: %v\n", err)
 		return err
+	}
+	rowsAffected := result.RowsAffected()
+	log.Printf("Rows affected: %d\n", rowsAffected)
+
+	if rowsAffected == 0 {
+		log.Println("No rows were inserted. Check your query or data.")
 	}
 
 	return nil
@@ -38,25 +81,51 @@ func InsertNewAccounts(account models.StoredAccount) error {
 
 ///////////////// TRANSACTIONS //////////////////////
 
-func FetchExistingTransactions(accountId string) ([]models.Transaction, error) {
+// Fetches every single transaction in the db. Will want to update this to fetch by userId
+func FetchAllTransactions(pool *pgxpool.Pool) ([]models.Transaction, error) {
 
 	logger := log.Default()
 	// Load configuration (you can expand this later)
-	cfg := config.LoadConfig()
 	err := godotenv.Load("../../.env")
 	if err != nil {
 		log.Fatalf("Error loading .env file: %v", err)
 	}
 
-	// Connect to the database
-	pool, err := Connect(DBConfig(cfg))
+	query := `SELECT * FROM public.transactions`
+	rows, err := pool.Query(context.Background(), query)
 	if err != nil {
-		log.Fatalf("Unable to connect to database: %v\n", err)
+		log.Fatalf("Failed to get transactions: %s", err)
 	}
-	defer pool.Close() // Ensure the connection is closed when you're done
+	logger.Println(rows)
+	transactions := []models.Transaction{}
+	rowCount := 0
+
+	// get all transactions and map them to the transaction map
+	for rows.Next() {
+		rowCount++
+		var txn models.Transaction
+		err := rows.Scan(&txn.ID, &txn.AccountID, &txn.Amount, &txn.Description, &txn.Payee, &txn.Memo, &txn.Category, &txn.TransactedAt, &txn.Posted)
+		if err != nil {
+			return nil, err
+		}
+		transactions = append(transactions, txn) // Use ID as a map key for easy lookups
+	}
+	log.Printf("Number of transactions fetched: %d", rowCount)
+
+	return transactions, nil
+
+}
+
+func FetchExistingTransactions(accountId string, pool *pgxpool.Pool) ([]models.Transaction, error) {
+
+	logger := log.Default()
+	// Load configuration (you can expand this later)
+	err := godotenv.Load("../../.env")
+	if err != nil {
+		log.Fatalf("Error loading .env file: %v", err)
+	}
 
 	query := `SELECT * FROM public.transactions WHERE account_id = $1`
-
 	rows, err := pool.Query(context.Background(), query, accountId)
 	if err != nil {
 		log.Fatalf("Failed to get transactions: %s", err)
@@ -81,20 +150,12 @@ func FetchExistingTransactions(accountId string) ([]models.Transaction, error) {
 
 }
 
-func FetchMostRecentTransaction(accountId string) (int64, error) {
-
-	// Load configuration (you can expand this later)
-	cfg := config.LoadConfig()
+func FetchMostRecentTransaction(accountId string, pool *pgxpool.Pool) (int64, error) {
 	err := godotenv.Load("../../.env")
 	if err != nil {
 		log.Fatalf("Error loading .env file: %v", err)
 	}
-	// Connect to the database
-	pool, err := Connect(DBConfig(cfg))
-	if err != nil {
-		log.Fatalf("Unable to connect to database: %v\n", err)
-	}
-	defer pool.Close() // Ensure the connection is closed when you're done
+
 	var lastTransactionDate *int64
 	err = pool.QueryRow(context.Background(), "SELECT MAX(transacted_at) FROM public.transactions WHERE account_id = $1", accountId).Scan(&lastTransactionDate)
 	if err == pgx.ErrNoRows || lastTransactionDate == nil {
@@ -120,19 +181,11 @@ func getLast30DaysTimestamp() int64 {
 	return last30Days.Unix()
 }
 
-func InsertNewTransactions(txns []models.Transaction) error {
-	// Load configuration (you can expand this later)
-	cfg := config.LoadConfig()
+func InsertNewTransactions(txns []models.Transaction, pool *pgxpool.Pool) error {
 	err := godotenv.Load("../../.env")
 	if err != nil {
 		log.Fatalf("Error loading .env file: %v", err)
 	}
-	// Connect to the database
-	pool, err := Connect(DBConfig(cfg))
-	if err != nil {
-		log.Fatalf("Unable to connect to database: %v\n", err)
-	}
-	defer pool.Close() // Ensure the connection is closed when you're done
 
 	for _, txn := range txns {
 		// Check if transaction ID already exists

@@ -1,5 +1,7 @@
 package models
 
+import "github.com/google/uuid"
+
 type Transaction struct {
 	ID           string `json:"id"`
 	AccountID    string `json:"account_id"`
@@ -35,15 +37,15 @@ type AccountResponse struct {
 }
 
 type StoredAccount struct {
-	ID               string `json:"id"`
-	UserId           int    `json:"user_id"`
-	Name             string `json:"name"`
-	AccountType      string `json:"account_type"`
-	Currency         string `json:"currency"`
-	Balance          string `json:"balance"`
-	BalanceDate      int64  `json:"balance-date"`
-	AvailableBalance string `json:"available-balance"`
-	Org              Org    `json:"org"`
+	ID               string    `json:"id"`
+	UserId           uuid.UUID `json:"user_id"`
+	Name             string    `json:"name"`
+	AccountType      string    `json:"account_type"`
+	Currency         string    `json:"currency"`
+	Balance          string    `json:"balance"`
+	AvailableBalance string    `json:"available-balance"`
+	Org              Org       `json:"org"`
+	BalanceDate      int64     `json:"balance-date"`
 }
 
 type Org struct {

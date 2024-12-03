@@ -9,7 +9,6 @@ import (
 
 	"github.com/BBaCode/pocketwise-server/models"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"golang.org/x/crypto/bcrypt"
 )
 
 func HandleUserSignUp(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool) {
@@ -32,24 +31,18 @@ func HandleUserSignUp(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool
 	defer r.Body.Close()
 
 	// Parse the JSON input
-	var creds models.Credentials
-	err = json.Unmarshal(body, &creds)
+	var userDetails models.SignupRequest
+	err = json.Unmarshal(body, &userDetails)
 	if err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
 		return
 	}
 
-	// Hash the password using bcrypt
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(creds.Password), bcrypt.DefaultCost)
-	if err != nil {
-		http.Error(w, "Failed to hash password", http.StatusInternalServerError)
-		return
-	}
-
 	// Insert the user into the database
-	query := `INSERT INTO public.users (email, password_hash) VALUES ($1, $2)`
-	_, err = pool.Exec(context.Background(), query, creds.Email, string(hashedPassword))
+	query := `INSERT INTO public.users (id, email, first_name, last_name) VALUES ($1, $2, $3, $4)`
+	_, err = pool.Exec(context.Background(), query, userDetails.Id, userDetails.Email, userDetails.FirstName, userDetails.LastName)
 	if err != nil {
+		fmt.Printf("Unexpected error: %s", err)
 		http.Error(w, "Failed to insert user into database", http.StatusInternalServerError)
 		return
 	}
@@ -57,7 +50,7 @@ func HandleUserSignUp(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool
 	// Success response
 	resp := models.Response{
 		Status:  "Success",
-		Message: fmt.Sprintf("User with email %s successfully signed up", creds.Email),
+		Message: fmt.Sprintf("User with email %s successfully signed up", userDetails.Email),
 	}
 
 	w.Header().Set("Content-Type", "application/json")
