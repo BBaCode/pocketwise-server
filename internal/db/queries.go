@@ -7,10 +7,45 @@ import (
 	"time"
 
 	"github.com/BBaCode/pocketwise-server/models"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 )
+
+func FetchExistingAccounts(userId uuid.UUID, pool *pgxpool.Pool) ([]models.StoredAccount, error) {
+
+	logger := log.Default()
+	// Load configuration (you can expand this later)
+	err := godotenv.Load("../../.env")
+	if err != nil {
+		log.Fatalf("Error loading .env file: %v", err)
+	}
+
+	query := `SELECT * FROM public.accounts WHERE user_id = $1`
+	rows, err := pool.Query(context.Background(), query, userId)
+	if err != nil {
+		log.Fatalf("Failed to get transactions: %s", err)
+	}
+	logger.Println(rows)
+	accounts := []models.StoredAccount{}
+	rowCount := 0
+
+	// get all transactions and map them to the transaction map
+	for rows.Next() {
+		rowCount++
+		var acc models.StoredAccount
+		err := rows.Scan(&acc.ID, &acc.UserId, &acc.Name, &acc.AccountType, &acc.Currency, &acc.Balance, &acc.BalanceDate, &acc.AvailableBalance, &acc.Org)
+		if err != nil {
+			return nil, err
+		}
+		accounts = append(accounts, acc) // Use ID as a map key for easy lookups
+	}
+	log.Printf("Number of transactions fetched: %d", rowCount)
+
+	return accounts, nil
+
+}
 
 func InsertNewAccounts(account models.StoredAccount, pool *pgxpool.Pool) error {
 

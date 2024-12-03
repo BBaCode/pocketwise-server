@@ -20,11 +20,19 @@ import (
 func HandleGetAccounts(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
-	req, err := http.NewRequest("GET", "https://beta-bridge.simplefin.org/simplefin/accounts", nil)
+	userID := r.Header.Get("X-User-ID")
+	if userID == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	userUUID, err := uuid.Parse(userID)
 	if err != nil {
-		log.Fatalf("Failed to create request: %v", err)
+		log.Printf("Invalid user ID: %v\n", err)
+		http.Error(w, "Invalid user ID", http.StatusBadRequest)
+		return
 	}
 
 	err = godotenv.Load("../../.env")
@@ -32,19 +40,8 @@ func HandleGetAccounts(w http.ResponseWriter, r *http.Request, pool *pgxpool.Poo
 		log.Fatalf("Error loading .env file: %v", err)
 	}
 
-	req.SetBasicAuth(os.Getenv("SIMPLE_FIN_USERNAME"), os.Getenv("SIMPLE_FIN_PASSWORD")) // Split username and password
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		http.Error(w, "Failed to get accounts", http.StatusForbidden)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		log.Fatalf("Failed to get accounts: %s", body)
-	}
+	// CONTINUE HERE
+	db.FetchExistingAccounts(userUUID, pool)
 
 	// Read and parse the response
 	var accountsResponse models.AccountResponse
