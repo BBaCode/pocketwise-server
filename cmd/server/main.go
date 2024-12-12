@@ -55,6 +55,10 @@ func main() {
 		handlers.HandleGetTransactions(w, r, pool)
 	}))).Methods("POST", "OPTIONS")
 
+	r.Handle("/update-transactions", middleware.ValidateJWT(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		handlers.HandleUpdateTransactions(w, r, pool)
+	}))).Methods("PUT", "OPTIONS")
+
 	log.Println("Server starting on :80")
 	if err := http.ListenAndServe(":80", r); err != nil {
 		log.Fatalf("ListenAndServe failed: %v\n", err)
