@@ -3,19 +3,12 @@ package handlers
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
-	"log"
 	"net/http"
-	"os"
 
-	"time"
-
-	"github.com/BBaCode/pocketwise-server/models"
-	"github.com/golang-jwt/jwt/v5" // Import JWT library
+	"github.com/BBaCode/pocketwise-server/models" // Import JWT library
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/joho/godotenv"
 )
 
 func HandleUserLogin(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool) {
@@ -61,46 +54,20 @@ func HandleUserLogin(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool)
 		} else {
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 		}
-
-		// Generate a JWT token upon successful login
-		// token, err := generateJWT(userDetails.Email)
-		// if err != nil {
-		// 	fmt.Print(err)
-		// 	http.Error(w, "Failed to generate token", http.StatusInternalServerError)
-		// 	return
-		// }
-
-		// Send the token in the response
-		resp := models.Response{
-			Status:  "Success",
-			Message: "User successfully logged in",
-			// Token:   token, // Include the token in your response model
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(resp)
+	}
+	// Create a response object
+	resp := models.Response{
+		Status:  "Success",
+		Message: "User successfully logged in",
+		Data: models.LoginResponse{
+			Email:     email,
+			FirstName: firstName,
+			LastName:  lastName,
+		},
 	}
 
-}
+	// Send the response
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resp)
 
-// Generate a JWT token
-func generateJWT(email string) (string, error) {
-	err := godotenv.Load("../../.env")
-	if err != nil {
-		log.Fatalf("Error loading .env file: %v", err)
-	}
-
-	// Get the JWT secret from the environment
-	jwtSecret := os.Getenv("JWT_SECRET")
-	if jwtSecret == "" {
-		return "", fmt.Errorf("JWT_SECRET is not set in the environment")
-	}
-
-	claims := jwt.MapClaims{
-		"email": email,
-		"exp":   time.Now().Add(time.Hour * 1).Unix(), // Token valid for 1 hours
-	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(jwtSecret))
 }

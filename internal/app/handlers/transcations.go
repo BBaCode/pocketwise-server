@@ -158,3 +158,42 @@ func HandleGetTransactions(w http.ResponseWriter, r *http.Request, pool *pgxpool
 		http.Error(w, "Failed to send accounts response", http.StatusInternalServerError)
 	}
 }
+func HandleUpdateTransactions(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, PUT, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+	fmt.Print(r.Method)
+
+	// Extract user ID from request header (set by middleware)
+	userID := r.Header.Get("X-User-ID")
+	if userID == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	var txnsCategoryUpdates models.UpdatedTransactions
+	if err := json.NewDecoder(r.Body).Decode(&txnsCategoryUpdates); err != nil {
+		log.Fatalf("Failed to decode transactions category request: %v", err)
+	}
+
+	err := godotenv.Load("../../.env")
+	if err != nil {
+		log.Fatalf("Error loading .env file: %v", err)
+	}
+
+	err = db.UpdateTransactionCategory(txnsCategoryUpdates, pool)
+	if err != nil {
+		log.Fatalf("Failed to fetch transactions with error: %s", err)
+	}
+
+	updatedTxns, err := db.FetchAllTransactions(pool)
+	if err != nil {
+		log.Fatalf("Failed to fetch transactions with error: %s", err)
+	}
+
+	// Send JSON response to the client
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(updatedTxns); err != nil {
+		http.Error(w, "Failed to send accounts response", http.StatusInternalServerError)
+	}
+}
