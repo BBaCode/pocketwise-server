@@ -27,7 +27,7 @@ func CategorizeTransaction(transaction *models.Transaction) (models.Transaction,
 		"Food & Dining", "Groceries", "Transportation", "Entertainment",
 		"Health & Wellness", "Shopping", "Utilities", "Rent", "Travel",
 		"Education", "Subscriptions", "Gifts & Donations", "Insurance",
-		"Personal Care", "Other",
+		"Personal Care", "Income", "Other",
 	}
 
 	prompt := fmt.Sprintf(

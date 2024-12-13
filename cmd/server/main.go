@@ -43,6 +43,7 @@ func main() {
 		handlers.HandleGetAccounts(w, r, pool)
 	}))).Methods("GET", "OPTIONS")
 
+	// this works for any NEW account but not for updating the same accounts.
 	r.Handle("/new-accounts", middleware.ValidateJWT(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		handlers.HandleAddAccounts(w, r, pool)
 	}))).Methods("GET")
@@ -51,9 +52,14 @@ func main() {
 		handlers.HandleGetAllTransactions(w, r, pool)
 	}))).Methods("GET", "POST", "OPTIONS")
 
+	// this currently lets us load more data from simplefin into the transactions table by passing an account
 	r.Handle("/transactions", middleware.ValidateJWT(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		handlers.HandleGetTransactions(w, r, pool)
 	}))).Methods("POST", "OPTIONS")
+
+	r.Handle("/update-transactions", middleware.ValidateJWT(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		handlers.HandleUpdateTransactions(w, r, pool)
+	}))).Methods("PUT", "OPTIONS")
 
 	log.Println("Server starting on :80")
 	if err := http.ListenAndServe(":80", r); err != nil {

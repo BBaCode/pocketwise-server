@@ -208,3 +208,24 @@ func InsertNewTransactions(txns []models.Transaction, pool *pgxpool.Pool) error 
 	}
 	return nil
 }
+
+func UpdateTransactionCategory(txns models.UpdatedTransactions, pool *pgxpool.Pool) error {
+	err := godotenv.Load("../../.env")
+	if err != nil {
+		log.Fatalf("Error loading .env file: %v", err)
+	}
+
+	for _, txn := range txns.UpdatedTransactions {
+		query := `UPDATE public.transactions 
+          SET category = $1 
+          WHERE id = $2`
+		_, err = pool.Exec(context.Background(), query, txn.Category, txn.ID)
+		if err != nil {
+			log.Printf("Failed to update category for transaction with ID: %s\n", txn.ID)
+			log.Fatalf("Unable to update transaction in database: %v\n", err)
+			return err
+		}
+
+	}
+	return nil
+}

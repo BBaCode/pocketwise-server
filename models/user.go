@@ -12,10 +12,13 @@ type LoginRequest struct {
 }
 
 type LoginResponse struct {
+	Email     string `json:"email"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
 }
 
 type Response struct {
-	Status  string `json:"status"`
-	Message string `json:"message"`
-	Token   string `json:"token,omitempty"`
+	Status  string        `json:"status"`
+	Message string        `json:"message"`
+	Data    LoginResponse `json:"data"`
 }

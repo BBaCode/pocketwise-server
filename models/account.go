@@ -14,6 +14,15 @@ type Transaction struct {
 	Category     string `json:"category"`
 }
 
+type TransactionCategoryRequest struct {
+	ID       string `json:"id"`
+	Category string `json:"category"`
+}
+
+type UpdatedTransactions struct {
+	UpdatedTransactions []TransactionCategoryRequest `json:"updatedTxns"`
+}
+
 // Account represents the structure of account data
 type Account struct {
 	ID               string        `json:"id"`
