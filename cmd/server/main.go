@@ -49,9 +49,10 @@ func main() {
 		handlers.HandleAddAccounts(w, r, pool)
 	}))).Methods("GET")
 
+	// Updates all accounts AND transactions: this would be the function to run every morning/ twice a day
 	r.Handle("/account-data", middleware.ValidateJWT(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		handlers.HandleGetUpdatedAccountData(w, r, pool)
-	}))).Methods("GET")
+	}))).Methods("GET", "OPTIONS")
 
 	r.Handle("/all-transactions", middleware.ValidateJWT(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		handlers.HandleGetAllTransactions(w, r, pool)

@@ -169,7 +169,27 @@ func FetchExistingTransactions(accountId string, pool *pgxpool.Pool) ([]models.T
 
 }
 
-func FetchMostRecentTransaction(accountId string, pool *pgxpool.Pool) (int64, error) {
+func FetchMostRecentTransactionForAllAccounts(pool *pgxpool.Pool) (int64, error) {
+	err := godotenv.Load("../../.env")
+	if err != nil {
+		log.Fatalf("Error loading .env file: %v", err)
+	}
+
+	var lastTransactionDate *int64
+	err = pool.QueryRow(context.Background(), "SELECT MAX(transacted_at) FROM public.transactions").Scan(&lastTransactionDate)
+	if err == pgx.ErrNoRows || lastTransactionDate == nil {
+		fmt.Println("No transactions found for this account")
+		return getLast30DaysTimestamp(), nil
+	} else if err != nil {
+		log.Fatalf("Failed to get most recent transaction: %s", err)
+	}
+
+	// Add 1 second buffer to avoid duplicates
+	adjustedStartDate := *lastTransactionDate + 1
+	return adjustedStartDate, nil
+}
+
+func FetchMostRecentTransactionForAnAccount(accountId string, pool *pgxpool.Pool) (int64, error) {
 	err := godotenv.Load("../../.env")
 	if err != nil {
 		log.Fatalf("Error loading .env file: %v", err)

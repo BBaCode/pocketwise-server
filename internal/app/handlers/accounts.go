@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/BBaCode/pocketwise-server/internal/app"
 	"github.com/BBaCode/pocketwise-server/internal/db"
 	"github.com/BBaCode/pocketwise-server/models"
 	"github.com/google/uuid"
@@ -154,7 +155,13 @@ func HandleGetUpdatedAccountData(w http.ResponseWriter, r *http.Request, pool *p
 		return
 	}
 
-	req, err := http.NewRequest("GET", "https://beta-bridge.simplefin.org/simplefin/accounts", nil)
+	startDate, err := db.FetchMostRecentTransactionForAllAccounts(pool)
+	if err != nil {
+		http.Error(w, "Something went wrong. Please try again later.", http.StatusInternalServerError)
+		log.Fatalf("Failed to get successful response from FetchMostRecentTransaction: %s", err)
+	}
+
+	req, err := http.NewRequest("GET", fmt.Sprintf("https://beta-bridge.simplefin.org/simplefin/accounts?start-date=%d", startDate), nil)
 	if err != nil {
 		log.Fatalf("Failed to create request: %v", err)
 	}
@@ -197,6 +204,22 @@ func HandleGetUpdatedAccountData(w http.ResponseWriter, r *http.Request, pool *p
 		storedAccount.Name = account.Name
 		storedAccount.UserId = userUUID
 		db.UpdateExistingAccounts(storedAccount, pool)
+
+		var categorizedTxns []models.Transaction
+		// categorize transactions and append them to a new array to send to database
+		for _, txn := range account.Transactions {
+			txn, err = app.CategorizeTransaction(&txn)
+			if err != nil {
+				log.Fatalf("Failed to categorize transactions with error: %s", err)
+			}
+			categorizedTxns = append(categorizedTxns, txn)
+		}
+
+		// insert new transactions into the database
+		err = db.InsertNewTransactions(categorizedTxns, pool)
+		if err != nil {
+			log.Fatalf("Failed to insert transactions with error: %s", err)
+		}
 	}
 
 	// Send JSON response to the client

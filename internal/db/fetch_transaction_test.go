@@ -35,7 +35,7 @@ func TestFetchMostRecentTransaction(t *testing.T, pool *pgxpool.Pool) {
 	}
 
 	// Call FetchMostRecentTransaction
-	mostRecentTransaction, err := FetchMostRecentTransaction("ACT-17dbc9ca-ce58-4d16-b4f1-f8edc1dd7364", pool)
+	mostRecentTransaction, err := FetchMostRecentTransactionForAnAccount("ACT-17dbc9ca-ce58-4d16-b4f1-f8edc1dd7364", pool)
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
 	}
