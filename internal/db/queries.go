@@ -79,6 +79,25 @@ func InsertNewAccounts(account models.StoredAccount, pool *pgxpool.Pool) error {
 	return nil
 }
 
+func UpdateExistingAccounts(account models.StoredAccount, pool *pgxpool.Pool) error {
+
+	err := godotenv.Load("../../.env")
+	if err != nil {
+		log.Fatalf("Error loading .env file: %v", err)
+	}
+	query := `UPDATE public.accounts 
+          SET balance = $1, available_balance = $2, balance_date = $3
+          WHERE id = $4`
+	_, err = pool.Exec(context.Background(), query, account.Balance, account.AvailableBalance, account.BalanceDate, account.ID)
+	if err != nil {
+		log.Printf("Failed to update category for transaction with ID: %s\n", account.ID)
+		log.Fatalf("Unable to update transaction in database: %v\n", err)
+		return err
+	}
+
+	return nil
+}
+
 ///////////////// TRANSACTIONS //////////////////////
 
 // Fetches every single transaction in the db. Will want to update this to fetch by userId

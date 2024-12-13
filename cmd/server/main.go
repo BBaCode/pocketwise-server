@@ -39,6 +39,7 @@ func main() {
 	}).Methods("POST", "OPTIONS")
 
 	// Protected routes (With JWT validation)
+	// Gets existing accounts from the database
 	r.Handle("/accounts", middleware.ValidateJWT(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		handlers.HandleGetAccounts(w, r, pool)
 	}))).Methods("GET", "OPTIONS")
@@ -46,6 +47,10 @@ func main() {
 	// this works for any NEW account but not for updating the same accounts.
 	r.Handle("/new-accounts", middleware.ValidateJWT(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		handlers.HandleAddAccounts(w, r, pool)
+	}))).Methods("GET")
+
+	r.Handle("/account-data", middleware.ValidateJWT(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		handlers.HandleGetUpdatedAccountData(w, r, pool)
 	}))).Methods("GET")
 
 	r.Handle("/all-transactions", middleware.ValidateJWT(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
