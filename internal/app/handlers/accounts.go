@@ -208,7 +208,13 @@ func HandleGetUpdatedAccountData(w http.ResponseWriter, r *http.Request, pool *p
 		var categorizedTxns []models.Transaction
 		// categorize transactions and append them to a new array to send to database
 		for _, txn := range account.Transactions {
-			txn, err = app.CategorizeTransaction(&txn)
+			category, err := db.FetchCategoryByPayee(txn, pool)
+			if len(category) > 0 {
+				txn.Category = category
+			} else {
+				txn, err = app.CategorizeTransaction(&txn)
+			}
+			txn.AccountID = account.ID
 			if err != nil {
 				log.Fatalf("Failed to categorize transactions with error: %s", err)
 			}

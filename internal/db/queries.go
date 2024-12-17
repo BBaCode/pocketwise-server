@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"time"
@@ -267,4 +268,28 @@ func UpdateTransactionCategory(txns models.UpdatedTransactions, pool *pgxpool.Po
 
 	}
 	return nil
+}
+
+func FetchCategoryByPayee(txn models.Transaction, pool *pgxpool.Pool) (string, error) {
+	// Load environment variables (optional if already loaded elsewhere)
+	err := godotenv.Load("../../.env")
+	if err != nil {
+		return "", fmt.Errorf("error loading .env file: %w", err)
+	}
+
+	// Query to check if a similar transaction with the same payee exists
+	var category string
+	query := `SELECT category FROM public.transactions WHERE payee = $1 LIMIT 1`
+	err = pool.QueryRow(context.Background(), query, txn.Payee).Scan(&category)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			// If no rows are found, return an empty category (not an error)
+			return "", nil
+		}
+		// Return other database errors
+		return "", fmt.Errorf("failed to fetch category: %w", err)
+	}
+
+	// Return the category if found
+	return category, nil
 }
