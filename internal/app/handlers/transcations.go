@@ -79,7 +79,7 @@ func HandleGetTransactions(w http.ResponseWriter, r *http.Request, pool *pgxpool
 		return
 	}
 
-	startDate, err := db.FetchMostRecentTransaction(reqBody.Account, pool)
+	startDate, err := db.FetchMostRecentTransactionForAnAccount(reqBody.Account, pool)
 	if err != nil {
 		http.Error(w, "Something went wrong. Please try again later.", http.StatusInternalServerError)
 		log.Fatalf("Failed to get successful response from FetchMostRecentTransaction: %s", err)

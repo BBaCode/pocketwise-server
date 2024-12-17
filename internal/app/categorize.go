@@ -27,11 +27,11 @@ func CategorizeTransaction(transaction *models.Transaction) (models.Transaction,
 		"Food & Dining", "Groceries", "Transportation", "Entertainment",
 		"Health & Wellness", "Shopping", "Utilities", "Rent", "Travel",
 		"Education", "Subscriptions", "Gifts & Donations", "Insurance",
-		"Personal Care", "Income", "Other",
+		"Personal Care", "Income", "Unknown",
 	}
 
 	prompt := fmt.Sprintf(
-		"You are a transaction categorizer. Classify each transaction into only one of these categories: %v. If it's unclear, categorize it as 'Other'. Respond with only the category name, without any extra words or punctuation.",
+		"You are a transaction categorizer. Classify each transaction into only one of these categories: %v. If it's unclear, categorize it as 'Unknown'. Respond with only the category name, without any extra words or punctuation.",
 		categories,
 	)
 

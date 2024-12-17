@@ -39,6 +39,7 @@ func main() {
 	}).Methods("POST", "OPTIONS")
 
 	// Protected routes (With JWT validation)
+	// Gets existing accounts from the database
 	r.Handle("/accounts", middleware.ValidateJWT(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		handlers.HandleGetAccounts(w, r, pool)
 	}))).Methods("GET", "OPTIONS")
@@ -47,6 +48,11 @@ func main() {
 	r.Handle("/new-accounts", middleware.ValidateJWT(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		handlers.HandleAddAccounts(w, r, pool)
 	}))).Methods("GET")
+
+	// Updates all accounts AND transactions: this would be the function to run every morning/ twice a day
+	r.Handle("/account-data", middleware.ValidateJWT(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		handlers.HandleGetUpdatedAccountData(w, r, pool)
+	}))).Methods("GET", "OPTIONS")
 
 	r.Handle("/all-transactions", middleware.ValidateJWT(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		handlers.HandleGetAllTransactions(w, r, pool)

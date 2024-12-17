@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"time"
@@ -79,6 +80,25 @@ func InsertNewAccounts(account models.StoredAccount, pool *pgxpool.Pool) error {
 	return nil
 }
 
+func UpdateExistingAccounts(account models.StoredAccount, pool *pgxpool.Pool) error {
+
+	err := godotenv.Load("../../.env")
+	if err != nil {
+		log.Fatalf("Error loading .env file: %v", err)
+	}
+	query := `UPDATE public.accounts 
+          SET balance = $1, available_balance = $2, balance_date = $3
+          WHERE id = $4`
+	_, err = pool.Exec(context.Background(), query, account.Balance, account.AvailableBalance, account.BalanceDate, account.ID)
+	if err != nil {
+		log.Printf("Failed to update category for transaction with ID: %s\n", account.ID)
+		log.Fatalf("Unable to update transaction in database: %v\n", err)
+		return err
+	}
+
+	return nil
+}
+
 ///////////////// TRANSACTIONS //////////////////////
 
 // Fetches every single transaction in the db. Will want to update this to fetch by userId
@@ -150,7 +170,27 @@ func FetchExistingTransactions(accountId string, pool *pgxpool.Pool) ([]models.T
 
 }
 
-func FetchMostRecentTransaction(accountId string, pool *pgxpool.Pool) (int64, error) {
+func FetchMostRecentTransactionForAllAccounts(pool *pgxpool.Pool) (int64, error) {
+	err := godotenv.Load("../../.env")
+	if err != nil {
+		log.Fatalf("Error loading .env file: %v", err)
+	}
+
+	var lastTransactionDate *int64
+	err = pool.QueryRow(context.Background(), "SELECT MAX(transacted_at) FROM public.transactions").Scan(&lastTransactionDate)
+	if err == pgx.ErrNoRows || lastTransactionDate == nil {
+		fmt.Println("No transactions found for this account")
+		return getLast30DaysTimestamp(), nil
+	} else if err != nil {
+		log.Fatalf("Failed to get most recent transaction: %s", err)
+	}
+
+	// Add 1 second buffer to avoid duplicates
+	adjustedStartDate := *lastTransactionDate + 1
+	return adjustedStartDate, nil
+}
+
+func FetchMostRecentTransactionForAnAccount(accountId string, pool *pgxpool.Pool) (int64, error) {
 	err := godotenv.Load("../../.env")
 	if err != nil {
 		log.Fatalf("Error loading .env file: %v", err)
@@ -228,4 +268,28 @@ func UpdateTransactionCategory(txns models.UpdatedTransactions, pool *pgxpool.Po
 
 	}
 	return nil
+}
+
+func FetchCategoryByPayee(txn models.Transaction, pool *pgxpool.Pool) (string, error) {
+	// Load environment variables (optional if already loaded elsewhere)
+	err := godotenv.Load("../../.env")
+	if err != nil {
+		return "", fmt.Errorf("error loading .env file: %w", err)
+	}
+
+	// Query to check if a similar transaction with the same payee exists
+	var category string
+	query := `SELECT category FROM public.transactions WHERE payee = $1 LIMIT 1`
+	err = pool.QueryRow(context.Background(), query, txn.Payee).Scan(&category)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			// If no rows are found, return an empty category (not an error)
+			return "", nil
+		}
+		// Return other database errors
+		return "", fmt.Errorf("failed to fetch category: %w", err)
+	}
+
+	// Return the category if found
+	return category, nil
 }
