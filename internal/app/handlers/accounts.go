@@ -148,12 +148,13 @@ func HandleGetUpdatedAccountData(w http.ResponseWriter, r *http.Request, pool *p
 		return
 	}
 
-	userUUID, err := uuid.Parse(userID)
-	if err != nil {
-		log.Printf("Invalid user ID: %v\n", err)
-		http.Error(w, "Invalid user ID", http.StatusBadRequest)
-		return
-	}
+	// THIS MAY BE USED TO VALIDATE AT SOME POINT BUT NOT FOR NOW
+	// userUUID, err := uuid.Parse(userID)
+	// if err != nil {
+	// 	log.Printf("Invalid user ID: %v\n", err)
+	// 	http.Error(w, "Invalid user ID", http.StatusBadRequest)
+	// 	return
+	// }
 
 	startDate, err := db.FetchMostRecentTransactionForAllAccounts(pool)
 	if err != nil {
@@ -193,17 +194,12 @@ func HandleGetUpdatedAccountData(w http.ResponseWriter, r *http.Request, pool *p
 
 	for _, account := range accountsResponse.Accounts {
 		// Assume each account has a list of transactions (you may need to retrieve this separately if not included)
-		var storedAccount models.StoredAccount
-		storedAccount.AccountType = "General" // hardcoded but can probably create some function to identify it (checking/savings/investment)
-		storedAccount.AvailableBalance = account.AvailableBalance
-		storedAccount.Balance = account.Balance
-		storedAccount.BalanceDate = account.BalanceDate
-		storedAccount.Currency = account.Currency
-		storedAccount.ID = account.ID
-		storedAccount.Org.Name = account.Org.Name
-		storedAccount.Name = account.Name
-		storedAccount.UserId = userUUID
-		db.UpdateExistingAccounts(storedAccount, pool)
+		var updatedAccountData models.UpdatedAccountData
+		updatedAccountData.ID = account.ID
+		updatedAccountData.AvailableBalance = account.AvailableBalance
+		updatedAccountData.Balance = account.Balance
+		updatedAccountData.BalanceDate = account.BalanceDate
+		db.UpdateExistingAccounts(updatedAccountData, pool)
 
 		var categorizedTxns []models.Transaction
 		// categorize transactions and append them to a new array to send to database
