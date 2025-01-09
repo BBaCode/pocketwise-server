@@ -39,12 +39,13 @@ func main() {
 	}).Methods("POST", "OPTIONS")
 
 	// Protected routes (With JWT validation)
-	// Gets existing accounts from the database
+	// Gets existing accounts from the database (no transactions)
 	r.Handle("/accounts", middleware.ValidateJWT(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		handlers.HandleGetAccounts(w, r, pool)
 	}))).Methods("GET", "OPTIONS")
 
 	// this works for any NEW account but not for updating the same accounts.
+	// currently this is done from an api, we dont have UI for this
 	r.Handle("/new-accounts", middleware.ValidateJWT(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		handlers.HandleAddAccounts(w, r, pool)
 	}))).Methods("GET")
@@ -59,6 +60,7 @@ func main() {
 	}))).Methods("GET", "POST", "OPTIONS")
 
 	// this currently lets us load more data from simplefin into the transactions table by passing an account
+	// not used at all as we moved away from account level updates
 	r.Handle("/transactions", middleware.ValidateJWT(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		handlers.HandleGetTransactions(w, r, pool)
 	}))).Methods("POST", "OPTIONS")

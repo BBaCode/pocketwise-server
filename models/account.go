@@ -57,6 +57,13 @@ type StoredAccount struct {
 	BalanceDate      int64     `json:"balance-date"`
 }
 
+type UpdatedAccountData struct {
+	ID               string `json:"id"`
+	Balance          string `json:"balance"`
+	AvailableBalance string `json:"available-balance"`
+	BalanceDate      int64  `json:"balance-date"`
+}
+
 type Org struct {
 	Name string `json:"name"`
 }

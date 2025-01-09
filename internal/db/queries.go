@@ -80,7 +80,7 @@ func InsertNewAccounts(account models.StoredAccount, pool *pgxpool.Pool) error {
 	return nil
 }
 
-func UpdateExistingAccounts(account models.StoredAccount, pool *pgxpool.Pool) error {
+func UpdateExistingAccounts(account models.UpdatedAccountData, pool *pgxpool.Pool) error {
 
 	err := godotenv.Load("../../.env")
 	if err != nil {
