@@ -293,3 +293,87 @@ func FetchCategoryByPayee(txn models.Transaction, pool *pgxpool.Pool) (string, e
 	// Return the category if found
 	return category, nil
 }
+
+////////////////////////// BUDGET /////////////////////////////////////
+
+func FetchExistingBudget(budgetRequest models.BudgetRequest, pool *pgxpool.Pool) (models.StoredBudget, error) {
+	err := godotenv.Load("../../.env")
+	if err != nil {
+		return models.StoredBudget{}, err
+	}
+	var budget models.StoredBudget
+	query := `SELECT * FROM public.budgets WHERE user_id = $1 AND year = $2 AND month = $3`
+	err = pool.QueryRow(context.Background(), query, budgetRequest.UserId, budgetRequest.Year, budgetRequest.Month).Scan(&budget.ID, &budget.UserId, &budget.Year, &budget.Month, &budget.Amount, &budget.CreatedAt, &budget.LastUpdated)
+	if err != nil {
+		return models.StoredBudget{}, err
+	}
+	return budget, nil
+}
+
+func FetchAllExistingBudgets(userId string, pool *pgxpool.Pool) ([]models.StoredBudget, error) {
+	err := godotenv.Load("../../.env")
+	if err != nil {
+		return []models.StoredBudget{}, err
+	}
+	userUUID, err := uuid.Parse(userId)
+	if err != nil {
+		log.Printf("Invalid user ID: %v\n", err)
+		return []models.StoredBudget{}, err
+	}
+
+	var budgets []models.StoredBudget
+	query := `SELECT * FROM public.budgets WHERE user_id = $1`
+	rows, err := pool.Query(context.Background(), query, userUUID)
+	if err != nil {
+		return []models.StoredBudget{}, err
+	}
+
+	for rows.Next() {
+		var budget models.StoredBudget
+		err := rows.Scan(&budget.ID, &budget.UserId, &budget.Year, &budget.Month, &budget.Amount, &budget.CreatedAt, &budget.LastUpdated)
+		if err != nil {
+			return nil, err
+		}
+		budgets = append(budgets, budget) // Use ID as a map key for easy lookups
+	}
+	return budgets, nil
+
+}
+
+func InsertNewBudget(budgetRequest models.BudgetRequest, pool *pgxpool.Pool) error {
+	err := godotenv.Load("../../.env")
+	if err != nil {
+		return err
+	}
+	userUUID, err := uuid.Parse(budgetRequest.UserId)
+	if err != nil {
+		log.Printf("Invalid user ID: %v\n", err)
+		return err
+	}
+
+	query := `INSERT INTO public.budgets (user_id, year, month, amount) VALUES ($1, $2, $3, $4)`
+	_, err = pool.Exec(context.Background(), query, userUUID, budgetRequest.Year, budgetRequest.Month, budgetRequest.Amount)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func DeleteBudget(budgetRequest models.BudgetRequest, pool *pgxpool.Pool) error {
+	err := godotenv.Load("../../.env")
+	if err != nil {
+		return err
+	}
+	userUUID, err := uuid.Parse(budgetRequest.UserId)
+	if err != nil {
+		log.Printf("Invalid user ID: %v\n", err)
+		return err
+	}
+
+	query := `DELETE FROM public.budgets WHERE user_id = $1 AND year = $2 AND month = $3`
+	_, err = pool.Exec(context.Background(), query, userUUID, budgetRequest.Year, budgetRequest.Month)
+	if err != nil {
+		return err
+	}
+	return nil
+}

@@ -14,7 +14,7 @@ func ValidateJWT(next http.Handler) http.Handler {
 		// Handle CORS preflight - without this, server was preventing subsequent calls
 		if r.Method == http.MethodOptions {
 			w.Header().Set("Access-Control-Allow-Origin", "*")
-			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT")
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE")
 			w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
 			w.WriteHeader(http.StatusOK)
 			return

@@ -69,6 +69,22 @@ func main() {
 		handlers.HandleUpdateTransactions(w, r, pool)
 	}))).Methods("PUT", "OPTIONS")
 
+	r.Handle("/budget", middleware.ValidateJWT(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		handlers.HandleGetBudget(w, r, pool)
+	}))).Methods("POST", "OPTIONS")
+
+	r.Handle("/all-budgets", middleware.ValidateJWT(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		handlers.HandleGetAllBudgets(w, r, pool)
+	}))).Methods("POST", "OPTIONS")
+
+	r.Handle("/new-budget", middleware.ValidateJWT(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		handlers.HandleAddNewBudget(w, r, pool)
+	}))).Methods("POST", "OPTIONS")
+
+	r.Handle("/delete-budget", middleware.ValidateJWT(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		handlers.HandleDeleteBudget(w, r, pool)
+	}))).Methods("DELETE", "OPTIONS")
+
 	log.Println("Server starting on :80")
 	if err := http.ListenAndServe(":80", r); err != nil {
 		log.Fatalf("ListenAndServe failed: %v\n", err)
