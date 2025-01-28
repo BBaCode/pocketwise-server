@@ -81,9 +81,13 @@ func main() {
 		handlers.HandleAddNewBudget(w, r, pool)
 	}))).Methods("POST", "OPTIONS")
 
-	r.Handle("/delete-budget", middleware.ValidateJWT(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	r.Handle("/delete-budget/{budgetId}", middleware.ValidateJWT(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		handlers.HandleDeleteBudget(w, r, pool)
 	}))).Methods("DELETE", "OPTIONS")
+
+	r.Handle("/update-budget/{budgetId}", middleware.ValidateJWT(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		handlers.HandleUpdateBudget(w, r, pool)
+	}))).Methods("PUT", "OPTIONS")
 
 	log.Println("Server starting on :80")
 	if err := http.ListenAndServe(":80", r); err != nil {

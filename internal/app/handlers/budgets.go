@@ -8,6 +8,7 @@ import (
 
 	"github.com/BBaCode/pocketwise-server/internal/db"
 	"github.com/BBaCode/pocketwise-server/models"
+	"github.com/gorilla/mux"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -108,14 +109,19 @@ func HandleAddNewBudget(w http.ResponseWriter, r *http.Request, pool *pgxpool.Po
 		return
 	}
 	budgetRequest.UserId = userID
+
 	var budgetResponse models.MessageResponse
-	if db.InsertNewBudget(budgetRequest, pool) == nil {
-		budgetResponse.Message = "Budget created successfully"
-
+	err = db.InsertNewBudget(budgetRequest, pool)
+	if err != nil {
+		fmt.Print(err)
+		if err.Error() == `ERROR: duplicate key value violates unique constraint "unique_month_year" (SQLSTATE 23505)` {
+			budgetResponse.Message = "Budget already exists for that month/year."
+		} else {
+			budgetResponse.Message = "Budget could not be created, please try again later."
+		}
 	} else {
-		budgetResponse.Message = "Budget could not be created, please try again later."
+		budgetResponse.Message = "Budget created successfully"
 	}
-
 	// Send JSON response to the client
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(budgetResponse); err != nil {
@@ -135,6 +141,44 @@ func HandleDeleteBudget(w http.ResponseWriter, r *http.Request, pool *pgxpool.Po
 		return
 	}
 
+	vars := mux.Vars(r)
+	budgetId := vars["budgetId"]
+
+	if budgetId == "" {
+		http.Error(w, "Budget ID is required", http.StatusBadRequest)
+		return
+	}
+
+	// Parse the JSON input
+
+	var budgetResponse models.MessageResponse
+	if db.DeleteBudget(budgetId, pool) == nil {
+		budgetResponse.Message = "Budget deleted successfully"
+
+	} else {
+		budgetResponse.Message = "Budget could not be deleted, please try again later."
+	}
+
+	// Send JSON response to the client
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(budgetResponse); err != nil {
+		http.Error(w, "Failed to send accounts response", http.StatusInternalServerError)
+	}
+}
+
+func HandleUpdateBudget(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "DELETE, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+	vars := mux.Vars(r)
+	budgetId := vars["budgetId"]
+
+	if budgetId == "" {
+		http.Error(w, "Budget ID is required", http.StatusBadRequest)
+		return
+	}
+
 	// Read the request body
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -143,20 +187,22 @@ func HandleDeleteBudget(w http.ResponseWriter, r *http.Request, pool *pgxpool.Po
 	}
 	defer r.Body.Close()
 
+	// Log the raw body to debug
+	fmt.Println("Raw request body:", string(body))
+
 	// Parse the JSON input
-	var budgetRequest models.BudgetRequest
-	err = json.Unmarshal(body, &budgetRequest)
+	var updateBudgetRequest models.UpdateBudgetRequest
+	err = json.Unmarshal(body, &updateBudgetRequest)
 	if err != nil {
-		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	var budgetResponse models.MessageResponse
-	if db.DeleteBudget(budgetRequest, pool) == nil {
-		budgetResponse.Message = "Budget deleted successfully"
-
+	if db.UpdateExistingBudget(budgetId, updateBudgetRequest, pool) == nil {
+		budgetResponse.Message = "Budget updated successfully"
 	} else {
-		budgetResponse.Message = "Budget could not be deleted, please try again later."
+		budgetResponse.Message = "Budget could not be updated, please try again later."
 	}
 
 	// Send JSON response to the client
