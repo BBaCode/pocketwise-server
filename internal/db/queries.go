@@ -293,3 +293,98 @@ func FetchCategoryByPayee(txn models.Transaction, pool *pgxpool.Pool) (string, e
 	// Return the category if found
 	return category, nil
 }
+
+////////////////////////// BUDGET /////////////////////////////////////
+
+func FetchExistingBudget(budgetRequest models.BudgetRequest, pool *pgxpool.Pool) (models.StoredBudget, error) {
+	err := godotenv.Load("../../.env")
+	if err != nil {
+		return models.StoredBudget{}, err
+	}
+	var budget models.StoredBudget
+	query := `SELECT * FROM public.budgets WHERE user_id = $1 AND year = $2 AND month = $3`
+	err = pool.QueryRow(context.Background(), query, budgetRequest.UserId, budgetRequest.Year, budgetRequest.Month).Scan(&budget.ID, &budget.UserId, &budget.Year, &budget.Month, &budget.Total, &budget.Food, &budget.Groceries, &budget.Transportation, &budget.Entertainment, &budget.Health, &budget.Shopping, &budget.Utilities, &budget.Housing, &budget.Travel, &budget.Education, &budget.Subscriptions, &budget.Gifts, &budget.Insurance, &budget.PersonalCare, &budget.Other, &budget.Unknown, &budget.CreatedAt, &budget.LastUpdated)
+	if err != nil {
+		return models.StoredBudget{}, err
+	}
+	return budget, nil
+}
+
+func FetchAllExistingBudgets(userId string, pool *pgxpool.Pool) ([]models.StoredBudget, error) {
+	err := godotenv.Load("../../.env")
+	if err != nil {
+		return []models.StoredBudget{}, err
+	}
+	userUUID, err := uuid.Parse(userId)
+	if err != nil {
+		log.Printf("Invalid user ID: %v\n", err)
+		return []models.StoredBudget{}, err
+	}
+
+	var budgets []models.StoredBudget
+	query := `SELECT * FROM public.budgets WHERE user_id = $1`
+	rows, err := pool.Query(context.Background(), query, userUUID)
+	if err != nil {
+		return []models.StoredBudget{}, err
+	}
+
+	for rows.Next() {
+		var budget models.StoredBudget
+		err := rows.Scan(&budget.ID, &budget.UserId, &budget.Year, &budget.Month, &budget.Total, &budget.Food, &budget.Groceries, &budget.Transportation, &budget.Entertainment, &budget.Health, &budget.Shopping, &budget.Utilities, &budget.Housing, &budget.Travel, &budget.Education, &budget.Subscriptions, &budget.Gifts, &budget.Insurance, &budget.PersonalCare, &budget.Other, &budget.Unknown, &budget.CreatedAt, &budget.LastUpdated)
+		if err != nil {
+			return nil, err
+		}
+		budgets = append(budgets, budget) // Use ID as a map key for easy lookups
+	}
+	return budgets, nil
+
+}
+
+func InsertNewBudget(budgetRequest models.BudgetRequest, pool *pgxpool.Pool) error {
+	err := godotenv.Load("../../.env")
+	if err != nil {
+		return err
+	}
+	userUUID, err := uuid.Parse(budgetRequest.UserId)
+	if err != nil {
+		log.Printf("Invalid user ID: %v\n", err)
+		return err
+	}
+
+	query := `INSERT INTO public.budgets (user_id, year, month, total, food, groceries, transportation, entertainment, health, shopping, utilities, housing, travel, education, subscriptions, gifts, insurance, personal_care, other, unknown) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)`
+	_, err = pool.Exec(context.Background(), query, userUUID, budgetRequest.Year, budgetRequest.Month, budgetRequest.Total, budgetRequest.Food, budgetRequest.Groceries, budgetRequest.Transportation, budgetRequest.Entertainment, budgetRequest.Health, budgetRequest.Shopping, budgetRequest.Utilities, budgetRequest.Housing, budgetRequest.Travel, budgetRequest.Education, budgetRequest.Subscriptions, budgetRequest.Gifts, budgetRequest.Insurance, budgetRequest.PersonalCare, budgetRequest.Other, budgetRequest.Unknown)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func DeleteBudget(budgetId string, pool *pgxpool.Pool) error {
+	err := godotenv.Load("../../.env")
+	if err != nil {
+		return err
+	}
+
+	query := `DELETE FROM public.budgets WHERE id = $1 `
+	_, err = pool.Exec(context.Background(), query, budgetId)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func UpdateExistingBudget(budgetId string, updateBudgetRequest models.UpdateBudgetRequest, pool *pgxpool.Pool) error {
+	err := godotenv.Load("../../.env")
+	if err != nil {
+		return err
+	}
+
+	query := `UPDATE public.budgets 
+          SET year = $1, month = $2, total = $3, food = $4, groceries = $5, transportation = $6, entertainment = $7, health = $8, shopping = $9, utilities = $10, housing = $11, travel = $12, education = $13, subscriptions = $14, gifts = $15, insurance = $16, personal_care = $17, other = $18, unknown = $19
+          WHERE id = $20`
+	_, err = pool.Exec(context.Background(), query, updateBudgetRequest.Year, updateBudgetRequest.Month, updateBudgetRequest.Total, updateBudgetRequest.Food, updateBudgetRequest.Groceries, updateBudgetRequest.Transportation, updateBudgetRequest.Entertainment, updateBudgetRequest.Health, updateBudgetRequest.Shopping, updateBudgetRequest.Utilities, updateBudgetRequest.Housing, updateBudgetRequest.Travel, updateBudgetRequest.Education, updateBudgetRequest.Subscriptions, updateBudgetRequest.Gifts, updateBudgetRequest.Insurance, updateBudgetRequest.PersonalCare, updateBudgetRequest.Other, updateBudgetRequest.Unknown, budgetId)
+	if err != nil {
+		return err
+	}
+	return nil
+}
