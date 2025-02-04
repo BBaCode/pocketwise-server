@@ -11,6 +11,7 @@ import (
 	"github.com/BBaCode/pocketwise-server/internal/app"
 	"github.com/BBaCode/pocketwise-server/internal/db"
 	"github.com/BBaCode/pocketwise-server/models"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 )
@@ -35,12 +36,24 @@ func HandleGetAllTransactions(w http.ResponseWriter, r *http.Request, pool *pgxp
 	// 	log.Fatalf("Failed to get successful response from FetchMostRecentTransaction: %s", err)
 	// }
 
-	err := godotenv.Load("../../.env")
+	userUUID, err := uuid.Parse(userID)
+	if err != nil {
+		log.Printf("Invalid user ID: %v\n", err)
+		http.Error(w, "Invalid user ID", http.StatusBadRequest)
+		return
+	}
+
+	userAccounts, err := db.FetchExistingAccounts(userUUID, pool)
+	if err != nil {
+		log.Fatalf("Failed to fetch accounts with error: %s", err)
+	}
+
+	err = godotenv.Load("../../.env")
 	if err != nil {
 		log.Fatalf("Error loading .env file: %v", err)
 	}
 
-	updatedTxns, err := db.FetchAllTransactions(pool)
+	updatedTxns, err := db.FetchAllTransactions(userAccounts, pool)
 	if err != nil {
 		log.Fatalf("Failed to fetch transactions with error: %s", err)
 	}
@@ -171,12 +184,24 @@ func HandleUpdateTransactions(w http.ResponseWriter, r *http.Request, pool *pgxp
 		return
 	}
 
+	userUUID, err := uuid.Parse(userID)
+	if err != nil {
+		log.Printf("Invalid user ID: %v\n", err)
+		http.Error(w, "Invalid user ID", http.StatusBadRequest)
+		return
+	}
+
+	userAccounts, err := db.FetchExistingAccounts(userUUID, pool)
+	if err != nil {
+		log.Fatalf("Failed to fetch accounts with error: %s", err)
+	}
+
 	var txnsCategoryUpdates models.UpdatedTransactions
 	if err := json.NewDecoder(r.Body).Decode(&txnsCategoryUpdates); err != nil {
 		log.Fatalf("Failed to decode transactions category request: %v", err)
 	}
 
-	err := godotenv.Load("../../.env")
+	err = godotenv.Load("../../.env")
 	if err != nil {
 		log.Fatalf("Error loading .env file: %v", err)
 	}
@@ -186,7 +211,7 @@ func HandleUpdateTransactions(w http.ResponseWriter, r *http.Request, pool *pgxp
 		log.Fatalf("Failed to fetch transactions with error: %s", err)
 	}
 
-	updatedTxns, err := db.FetchAllTransactions(pool)
+	updatedTxns, err := db.FetchAllTransactions(userAccounts, pool)
 	if err != nil {
 		log.Fatalf("Failed to fetch transactions with error: %s", err)
 	}

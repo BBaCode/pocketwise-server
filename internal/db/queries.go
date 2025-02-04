@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/BBaCode/pocketwise-server/models"
@@ -102,38 +103,52 @@ func UpdateExistingAccounts(account models.UpdatedAccountData, pool *pgxpool.Poo
 ///////////////// TRANSACTIONS //////////////////////
 
 // Fetches every single transaction in the db. Will want to update this to fetch by userId
-func FetchAllTransactions(pool *pgxpool.Pool) ([]models.Transaction, error) {
-
+func FetchAllTransactions(userAccounts []models.StoredAccount, pool *pgxpool.Pool) ([]models.Transaction, error) {
 	logger := log.Default()
-	// Load configuration (you can expand this later)
 	err := godotenv.Load("../../.env")
 	if err != nil {
 		log.Fatalf("Error loading .env file: %v", err)
 	}
 
-	query := `SELECT * FROM public.transactions`
-	rows, err := pool.Query(context.Background(), query)
+	// Extract account IDs from userAccounts
+	var accountIDs []string
+	for _, account := range userAccounts {
+		accountIDs = append(accountIDs, account.ID)
+	}
+
+	if len(accountIDs) == 0 {
+		// No accounts found, return empty result
+		return []models.Transaction{}, nil
+	}
+
+	// Construct a dynamic placeholder list for IN clause
+	placeholders := make([]string, len(accountIDs))
+	args := make([]interface{}, len(accountIDs))
+	for i, id := range accountIDs {
+		placeholders[i] = fmt.Sprintf("$%d", i+1) // Create PostgreSQL placeholders
+		args[i] = id
+	}
+
+	// Query only transactions that belong to the user's accounts
+	query := fmt.Sprintf(`SELECT * FROM public.transactions WHERE account_id IN (%s)`, strings.Join(placeholders, ","))
+
+	rows, err := pool.Query(context.Background(), query, args...)
 	if err != nil {
 		log.Fatalf("Failed to get transactions: %s", err)
 	}
-	logger.Println(rows)
-	transactions := []models.Transaction{}
-	rowCount := 0
 
-	// get all transactions and map them to the transaction map
+	transactions := []models.Transaction{}
 	for rows.Next() {
-		rowCount++
 		var txn models.Transaction
 		err := rows.Scan(&txn.ID, &txn.AccountID, &txn.Amount, &txn.Description, &txn.Payee, &txn.Memo, &txn.Category, &txn.TransactedAt, &txn.Posted)
 		if err != nil {
 			return nil, err
 		}
-		transactions = append(transactions, txn) // Use ID as a map key for easy lookups
+		transactions = append(transactions, txn)
 	}
-	log.Printf("Number of transactions fetched: %d", rowCount)
 
+	logger.Printf("Number of transactions fetched: %d", len(transactions))
 	return transactions, nil
-
 }
 
 func FetchExistingTransactions(accountId string, pool *pgxpool.Pool) ([]models.Transaction, error) {
