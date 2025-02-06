@@ -17,7 +17,6 @@
 vendor/
 Gopkg.lock
 Gopkg.toml
-go.sum
 
 # Build output directories
 bin/
