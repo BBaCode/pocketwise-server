@@ -12,17 +12,11 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/joho/godotenv"
 )
 
 func FetchExistingAccounts(userId uuid.UUID, pool *pgxpool.Pool) ([]models.StoredAccount, error) {
-
 	logger := log.Default()
 	// Load configuration (you can expand this later)
-	err := godotenv.Load("../../.env")
-	if err != nil {
-		log.Fatalf("Error loading .env file: %v", err)
-	}
 
 	query := `SELECT * FROM public.accounts WHERE user_id = $1`
 	rows, err := pool.Query(context.Background(), query, userId)
@@ -59,12 +53,6 @@ func FetchExistingAccounts(userId uuid.UUID, pool *pgxpool.Pool) ([]models.Store
 }
 
 func InsertNewAccounts(account models.StoredAccount, pool *pgxpool.Pool) error {
-
-	err := godotenv.Load("../../.env")
-	if err != nil {
-		log.Fatalf("Error loading .env file: %v", err)
-	}
-
 	query := `INSERT INTO public.accounts (id, user_id, name, account_type, currency, balance, available_balance, org_name, balance_date) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`
 	result, err := pool.Exec(context.Background(), query, account.ID, account.UserId, account.Name, account.AccountType, account.Currency, account.Balance, account.AvailableBalance, account.Org.Name, account.BalanceDate)
 	if err != nil {
@@ -82,15 +70,10 @@ func InsertNewAccounts(account models.StoredAccount, pool *pgxpool.Pool) error {
 }
 
 func UpdateExistingAccounts(account models.UpdatedAccountData, pool *pgxpool.Pool) error {
-
-	err := godotenv.Load("../../.env")
-	if err != nil {
-		log.Fatalf("Error loading .env file: %v", err)
-	}
 	query := `UPDATE public.accounts 
           SET balance = $1, available_balance = $2, balance_date = $3
           WHERE id = $4`
-	_, err = pool.Exec(context.Background(), query, account.Balance, account.AvailableBalance, account.BalanceDate, account.ID)
+	_, err := pool.Exec(context.Background(), query, account.Balance, account.AvailableBalance, account.BalanceDate, account.ID)
 	if err != nil {
 		log.Printf("Failed to update category for transaction with ID: %s\n", account.ID)
 		log.Fatalf("Unable to update transaction in database: %v\n", err)
@@ -105,10 +88,6 @@ func UpdateExistingAccounts(account models.UpdatedAccountData, pool *pgxpool.Poo
 // Fetches every single transaction in the db. Will want to update this to fetch by userId
 func FetchAllTransactions(userAccounts []models.StoredAccount, pool *pgxpool.Pool) ([]models.Transaction, error) {
 	logger := log.Default()
-	err := godotenv.Load("../../.env")
-	if err != nil {
-		log.Fatalf("Error loading .env file: %v", err)
-	}
 
 	// Extract account IDs from userAccounts
 	var accountIDs []string
@@ -152,13 +131,8 @@ func FetchAllTransactions(userAccounts []models.StoredAccount, pool *pgxpool.Poo
 }
 
 func FetchExistingTransactions(accountId string, pool *pgxpool.Pool) ([]models.Transaction, error) {
-
 	logger := log.Default()
 	// Load configuration (you can expand this later)
-	err := godotenv.Load("../../.env")
-	if err != nil {
-		log.Fatalf("Error loading .env file: %v", err)
-	}
 
 	query := `SELECT * FROM public.transactions WHERE account_id = $1`
 	rows, err := pool.Query(context.Background(), query, accountId)
@@ -186,13 +160,8 @@ func FetchExistingTransactions(accountId string, pool *pgxpool.Pool) ([]models.T
 }
 
 func FetchMostRecentTransactionForAllAccounts(pool *pgxpool.Pool) (int64, error) {
-	err := godotenv.Load("../../.env")
-	if err != nil {
-		log.Fatalf("Error loading .env file: %v", err)
-	}
-
 	var lastTransactionDate *int64
-	err = pool.QueryRow(context.Background(), "SELECT MAX(transacted_at) FROM public.transactions").Scan(&lastTransactionDate)
+	err := pool.QueryRow(context.Background(), "SELECT MAX(transacted_at) FROM public.transactions").Scan(&lastTransactionDate)
 	if err == pgx.ErrNoRows || lastTransactionDate == nil {
 		fmt.Println("No transactions found for this account")
 		return getLast30DaysTimestamp(), nil
@@ -206,13 +175,8 @@ func FetchMostRecentTransactionForAllAccounts(pool *pgxpool.Pool) (int64, error)
 }
 
 func FetchMostRecentTransactionForAnAccount(accountId string, pool *pgxpool.Pool) (int64, error) {
-	err := godotenv.Load("../../.env")
-	if err != nil {
-		log.Fatalf("Error loading .env file: %v", err)
-	}
-
 	var lastTransactionDate *int64
-	err = pool.QueryRow(context.Background(), "SELECT MAX(transacted_at) FROM public.transactions WHERE account_id = $1", accountId).Scan(&lastTransactionDate)
+	err := pool.QueryRow(context.Background(), "SELECT MAX(transacted_at) FROM public.transactions WHERE account_id = $1", accountId).Scan(&lastTransactionDate)
 	if err == pgx.ErrNoRows || lastTransactionDate == nil {
 		fmt.Println("No transactions found for this account")
 		return getLast30DaysTimestamp(), nil
@@ -237,15 +201,10 @@ func getLast30DaysTimestamp() int64 {
 }
 
 func InsertNewTransactions(txns []models.Transaction, pool *pgxpool.Pool) error {
-	err := godotenv.Load("../../.env")
-	if err != nil {
-		log.Fatalf("Error loading .env file: %v", err)
-	}
-
 	for _, txn := range txns {
 		// Check if transaction ID already exists
 		var exists bool
-		err = pool.QueryRow(context.Background(), "SELECT EXISTS(SELECT 1 FROM public.transactions WHERE id = $1)", txn.ID).Scan(&exists)
+		err := pool.QueryRow(context.Background(), "SELECT EXISTS(SELECT 1 FROM public.transactions WHERE id = $1)", txn.ID).Scan(&exists)
 		if err != nil {
 			log.Fatalf("Failed to check existing transaction: %v\n", err)
 		}
@@ -265,16 +224,12 @@ func InsertNewTransactions(txns []models.Transaction, pool *pgxpool.Pool) error 
 }
 
 func UpdateTransactionCategory(txns models.UpdatedTransactions, pool *pgxpool.Pool) error {
-	err := godotenv.Load("../../.env")
-	if err != nil {
-		log.Fatalf("Error loading .env file: %v", err)
-	}
 
 	for _, txn := range txns.UpdatedTransactions {
 		query := `UPDATE public.transactions 
           SET category = $1 
           WHERE id = $2`
-		_, err = pool.Exec(context.Background(), query, txn.Category, txn.ID)
+		_, err := pool.Exec(context.Background(), query, txn.Category, txn.ID)
 		if err != nil {
 			log.Printf("Failed to update category for transaction with ID: %s\n", txn.ID)
 			log.Fatalf("Unable to update transaction in database: %v\n", err)
@@ -286,16 +241,10 @@ func UpdateTransactionCategory(txns models.UpdatedTransactions, pool *pgxpool.Po
 }
 
 func FetchCategoryByPayee(txn models.Transaction, pool *pgxpool.Pool) (string, error) {
-	// Load environment variables (optional if already loaded elsewhere)
-	err := godotenv.Load("../../.env")
-	if err != nil {
-		return "", fmt.Errorf("error loading .env file: %w", err)
-	}
-
 	// Query to check if a similar transaction with the same payee exists
 	var category string
 	query := `SELECT category FROM public.transactions WHERE payee = $1 LIMIT 1`
-	err = pool.QueryRow(context.Background(), query, txn.Payee).Scan(&category)
+	err := pool.QueryRow(context.Background(), query, txn.Payee).Scan(&category)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			// If no rows are found, return an empty category (not an error)
@@ -312,13 +261,9 @@ func FetchCategoryByPayee(txn models.Transaction, pool *pgxpool.Pool) (string, e
 ////////////////////////// BUDGET /////////////////////////////////////
 
 func FetchExistingBudget(budgetRequest models.BudgetRequest, pool *pgxpool.Pool) (models.StoredBudget, error) {
-	err := godotenv.Load("../../.env")
-	if err != nil {
-		return models.StoredBudget{}, err
-	}
 	var budget models.StoredBudget
 	query := `SELECT * FROM public.budgets WHERE user_id = $1 AND year = $2 AND month = $3`
-	err = pool.QueryRow(context.Background(), query, budgetRequest.UserId, budgetRequest.Year, budgetRequest.Month).Scan(&budget.ID, &budget.UserId, &budget.Year, &budget.Month, &budget.Total, &budget.Food, &budget.Groceries, &budget.Transportation, &budget.Entertainment, &budget.Health, &budget.Shopping, &budget.Utilities, &budget.Housing, &budget.Travel, &budget.Education, &budget.Subscriptions, &budget.Gifts, &budget.Insurance, &budget.PersonalCare, &budget.Other, &budget.Unknown, &budget.CreatedAt, &budget.LastUpdated)
+	err := pool.QueryRow(context.Background(), query, budgetRequest.UserId, budgetRequest.Year, budgetRequest.Month).Scan(&budget.ID, &budget.UserId, &budget.Year, &budget.Month, &budget.Total, &budget.Food, &budget.Groceries, &budget.Transportation, &budget.Entertainment, &budget.Health, &budget.Shopping, &budget.Utilities, &budget.Housing, &budget.Travel, &budget.Education, &budget.Subscriptions, &budget.Gifts, &budget.Insurance, &budget.PersonalCare, &budget.Other, &budget.Unknown, &budget.CreatedAt, &budget.LastUpdated)
 	if err != nil {
 		return models.StoredBudget{}, err
 	}
@@ -326,10 +271,6 @@ func FetchExistingBudget(budgetRequest models.BudgetRequest, pool *pgxpool.Pool)
 }
 
 func FetchAllExistingBudgets(userId string, pool *pgxpool.Pool) ([]models.StoredBudget, error) {
-	err := godotenv.Load("../../.env")
-	if err != nil {
-		return []models.StoredBudget{}, err
-	}
 	userUUID, err := uuid.Parse(userId)
 	if err != nil {
 		log.Printf("Invalid user ID: %v\n", err)
@@ -356,10 +297,6 @@ func FetchAllExistingBudgets(userId string, pool *pgxpool.Pool) ([]models.Stored
 }
 
 func InsertNewBudget(budgetRequest models.BudgetRequest, pool *pgxpool.Pool) error {
-	err := godotenv.Load("../../.env")
-	if err != nil {
-		return err
-	}
 	userUUID, err := uuid.Parse(budgetRequest.UserId)
 	if err != nil {
 		log.Printf("Invalid user ID: %v\n", err)
@@ -375,13 +312,8 @@ func InsertNewBudget(budgetRequest models.BudgetRequest, pool *pgxpool.Pool) err
 }
 
 func DeleteBudget(budgetId string, pool *pgxpool.Pool) error {
-	err := godotenv.Load("../../.env")
-	if err != nil {
-		return err
-	}
-
 	query := `DELETE FROM public.budgets WHERE id = $1 `
-	_, err = pool.Exec(context.Background(), query, budgetId)
+	_, err := pool.Exec(context.Background(), query, budgetId)
 	if err != nil {
 		return err
 	}
@@ -389,15 +321,10 @@ func DeleteBudget(budgetId string, pool *pgxpool.Pool) error {
 }
 
 func UpdateExistingBudget(budgetId string, updateBudgetRequest models.UpdateBudgetRequest, pool *pgxpool.Pool) error {
-	err := godotenv.Load("../../.env")
-	if err != nil {
-		return err
-	}
-
 	query := `UPDATE public.budgets 
           SET year = $1, month = $2, total = $3, food = $4, groceries = $5, transportation = $6, entertainment = $7, health = $8, shopping = $9, utilities = $10, housing = $11, travel = $12, education = $13, subscriptions = $14, gifts = $15, insurance = $16, personal_care = $17, other = $18, unknown = $19
           WHERE id = $20`
-	_, err = pool.Exec(context.Background(), query, updateBudgetRequest.Year, updateBudgetRequest.Month, updateBudgetRequest.Total, updateBudgetRequest.Food, updateBudgetRequest.Groceries, updateBudgetRequest.Transportation, updateBudgetRequest.Entertainment, updateBudgetRequest.Health, updateBudgetRequest.Shopping, updateBudgetRequest.Utilities, updateBudgetRequest.Housing, updateBudgetRequest.Travel, updateBudgetRequest.Education, updateBudgetRequest.Subscriptions, updateBudgetRequest.Gifts, updateBudgetRequest.Insurance, updateBudgetRequest.PersonalCare, updateBudgetRequest.Other, updateBudgetRequest.Unknown, budgetId)
+	_, err := pool.Exec(context.Background(), query, updateBudgetRequest.Year, updateBudgetRequest.Month, updateBudgetRequest.Total, updateBudgetRequest.Food, updateBudgetRequest.Groceries, updateBudgetRequest.Transportation, updateBudgetRequest.Entertainment, updateBudgetRequest.Health, updateBudgetRequest.Shopping, updateBudgetRequest.Utilities, updateBudgetRequest.Housing, updateBudgetRequest.Travel, updateBudgetRequest.Education, updateBudgetRequest.Subscriptions, updateBudgetRequest.Gifts, updateBudgetRequest.Insurance, updateBudgetRequest.PersonalCare, updateBudgetRequest.Other, updateBudgetRequest.Unknown, budgetId)
 	if err != nil {
 		return err
 	}

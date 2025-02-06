@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 
 	config "github.com/BBaCode/pocketwise-server/internal/app"
 	"github.com/BBaCode/pocketwise-server/internal/app/handlers"
@@ -13,12 +14,17 @@ import (
 )
 
 func main() {
-	// Load configuration (you can expand this later)
-	cfg := config.LoadConfig()
-	err := godotenv.Load("../../.env")
-	if err != nil {
-		log.Fatalf("Error loading .env file: %v", err)
+	if os.Getenv("RAILWAY_ENVIRONMENT") == "" {
+		// Try to load .env file only in local development
+		err := godotenv.Load("../../.env")
+		if err != nil {
+			log.Println("No .env file found, relying on system environment variables.")
+		} else {
+			log.Println(".env file loaded successfully.")
+		}
 	}
+
+	cfg := config.LoadConfig()
 
 	// Connect to the database
 	pool, err := db.Connect(db.DBConfig(cfg))
@@ -90,8 +96,12 @@ func main() {
 	}))).Methods("PUT", "OPTIONS")
 
 	log.Println("Server starting on :80")
-	if err := http.ListenAndServe(":80", r); err != nil {
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "80"
+	}
+	if err := http.ListenAndServe(":"+port, r); err != nil {
 		log.Fatalf("ListenAndServe failed: %v\n", err)
 	}
-
 }
