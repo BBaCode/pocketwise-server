@@ -13,7 +13,6 @@ import (
 	"github.com/BBaCode/pocketwise-server/models"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/joho/godotenv"
 )
 
 func HandleGetAllTransactions(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool) {
@@ -46,11 +45,6 @@ func HandleGetAllTransactions(w http.ResponseWriter, r *http.Request, pool *pgxp
 	userAccounts, err := db.FetchExistingAccounts(userUUID, pool)
 	if err != nil {
 		log.Fatalf("Failed to fetch accounts with error: %s", err)
-	}
-
-	err = godotenv.Load("../../.env")
-	if err != nil {
-		log.Fatalf("Error loading .env file: %v", err)
 	}
 
 	updatedTxns, err := db.FetchAllTransactions(userAccounts, pool)
@@ -101,11 +95,6 @@ func HandleGetTransactions(w http.ResponseWriter, r *http.Request, pool *pgxpool
 	req, err := http.NewRequest("GET", fmt.Sprintf("https://beta-bridge.simplefin.org/simplefin/accounts?start-date=%d&account=%s", startDate, reqBody.Account), nil)
 	if err != nil {
 		log.Fatalf("Failed to create request: %v", err)
-	}
-
-	err = godotenv.Load("../../.env")
-	if err != nil {
-		log.Fatalf("Error loading .env file: %v", err)
 	}
 
 	req.SetBasicAuth(os.Getenv("SIMPLE_FIN_USERNAME"), os.Getenv("SIMPLE_FIN_PASSWORD")) // Split username and password
@@ -199,11 +188,6 @@ func HandleUpdateTransactions(w http.ResponseWriter, r *http.Request, pool *pgxp
 	var txnsCategoryUpdates models.UpdatedTransactions
 	if err := json.NewDecoder(r.Body).Decode(&txnsCategoryUpdates); err != nil {
 		log.Fatalf("Failed to decode transactions category request: %v", err)
-	}
-
-	err = godotenv.Load("../../.env")
-	if err != nil {
-		log.Fatalf("Error loading .env file: %v", err)
 	}
 
 	err = db.UpdateTransactionCategory(txnsCategoryUpdates, pool)

@@ -13,7 +13,6 @@ import (
 	"github.com/BBaCode/pocketwise-server/models"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/joho/godotenv"
 )
 
 // TODO: I suspect that this function is no longer needed because everything flows
@@ -41,11 +40,6 @@ func HandleGetAccounts(w http.ResponseWriter, r *http.Request, pool *pgxpool.Poo
 		log.Printf("Invalid user ID: %v\n", err)
 		http.Error(w, "Invalid user ID", http.StatusBadRequest)
 		return
-	}
-
-	err = godotenv.Load("../../.env")
-	if err != nil {
-		log.Fatalf("Error loading .env file: %v", err)
 	}
 
 	// CONTINUE HERE
@@ -87,11 +81,6 @@ func HandleAddAccounts(w http.ResponseWriter, r *http.Request, pool *pgxpool.Poo
 	req, err := http.NewRequest("GET", "https://beta-bridge.simplefin.org/simplefin/accounts", nil)
 	if err != nil {
 		log.Fatalf("Failed to create request: %v", err)
-	}
-
-	err = godotenv.Load("../../.env")
-	if err != nil {
-		log.Fatalf("Error loading .env file: %v", err)
 	}
 
 	req.SetBasicAuth(os.Getenv("SIMPLE_FIN_USERNAME"), os.Getenv("SIMPLE_FIN_PASSWORD")) // Split username and password
@@ -165,11 +154,6 @@ func HandleGetUpdatedAccountData(w http.ResponseWriter, r *http.Request, pool *p
 	req, err := http.NewRequest("GET", fmt.Sprintf("https://beta-bridge.simplefin.org/simplefin/accounts?start-date=%d", startDate), nil)
 	if err != nil {
 		log.Fatalf("Failed to create request: %v", err)
-	}
-
-	err = godotenv.Load("../../.env")
-	if err != nil {
-		log.Fatalf("Error loading .env file: %v", err)
 	}
 
 	req.SetBasicAuth(os.Getenv("SIMPLE_FIN_USERNAME"), os.Getenv("SIMPLE_FIN_PASSWORD")) // Split username and password

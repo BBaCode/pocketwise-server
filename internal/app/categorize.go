@@ -3,21 +3,13 @@ package app
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/BBaCode/pocketwise-server/models"
-	"github.com/joho/godotenv"
 	openai "github.com/sashabaranov/go-openai"
 )
 
 func CategorizeTransaction(transaction *models.Transaction) (models.Transaction, error) {
-
-	err := godotenv.Load("../../.env")
-	if err != nil {
-		log.Fatalf("Error loading .env file: %v", err)
-	}
-
 	// Create the prompt that helps categorize the transaction
 	// prompt := fmt.Sprintf("Categorize the following transaction based on the description: '%s' with an amount of $%.2f", transaction.Description, transaction.Amount)
 
