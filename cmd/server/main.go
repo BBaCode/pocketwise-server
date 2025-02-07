@@ -95,12 +95,11 @@ func main() {
 		handlers.HandleUpdateBudget(w, r, pool)
 	}))).Methods("PUT", "OPTIONS")
 
-	log.Println("Server starting on :80")
-
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
+	log.Println("Server starting on: ", port)
 	if err := http.ListenAndServe(":"+port, r); err != nil {
 		log.Fatalf("ListenAndServe failed: %v\n", err)
 	}

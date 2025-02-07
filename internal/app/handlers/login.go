@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 
@@ -24,6 +25,7 @@ func HandleUserLogin(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool)
 
 	// Read the request body
 	body, err := io.ReadAll(r.Body)
+	fmt.Println(string(body))
 	if err != nil {
 		http.Error(w, "Failed to read request body", http.StatusBadRequest)
 		return
