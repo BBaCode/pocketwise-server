@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 
@@ -12,7 +13,7 @@ import (
 )
 
 func HandleUserLogin(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Origin", "https://deploy-preview-13--pocketwise.netlify.app, https://pocketwise.netlify.app")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 
@@ -24,6 +25,7 @@ func HandleUserLogin(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool)
 
 	// Read the request body
 	body, err := io.ReadAll(r.Body)
+	fmt.Println(string(body))
 	if err != nil {
 		http.Error(w, "Failed to read request body", http.StatusBadRequest)
 		return
