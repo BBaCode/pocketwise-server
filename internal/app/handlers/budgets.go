@@ -13,7 +13,15 @@ import (
 )
 
 func HandleGetBudget(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
+	allowedOrigins := map[string]bool{
+		"https://deploy-preview-13--pocketwise.netlify.app": true,
+		"https://pocketwise.netlify.app":                    true,
+	}
+
+	origin := r.Header.Get("Origin")
+	if allowedOrigins[origin] {
+		w.Header().Set("Access-Control-Allow-Origin", origin)
+	}
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
@@ -54,7 +62,15 @@ func HandleGetBudget(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool)
 }
 
 func HandleGetAllBudgets(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
+	allowedOrigins := map[string]bool{
+		"https://deploy-preview-13--pocketwise.netlify.app": true,
+		"https://pocketwise.netlify.app":                    true,
+	}
+
+	origin := r.Header.Get("Origin")
+	if allowedOrigins[origin] {
+		w.Header().Set("Access-Control-Allow-Origin", origin)
+	}
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
@@ -79,7 +95,15 @@ func HandleGetAllBudgets(w http.ResponseWriter, r *http.Request, pool *pgxpool.P
 }
 
 func HandleAddNewBudget(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
+	allowedOrigins := map[string]bool{
+		"https://deploy-preview-13--pocketwise.netlify.app": true,
+		"https://pocketwise.netlify.app":                    true,
+	}
+
+	origin := r.Header.Get("Origin")
+	if allowedOrigins[origin] {
+		w.Header().Set("Access-Control-Allow-Origin", origin)
+	}
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
@@ -130,7 +154,15 @@ func HandleAddNewBudget(w http.ResponseWriter, r *http.Request, pool *pgxpool.Po
 }
 
 func HandleDeleteBudget(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
+	allowedOrigins := map[string]bool{
+		"https://deploy-preview-13--pocketwise.netlify.app": true,
+		"https://pocketwise.netlify.app":                    true,
+	}
+
+	origin := r.Header.Get("Origin")
+	if allowedOrigins[origin] {
+		w.Header().Set("Access-Control-Allow-Origin", origin)
+	}
 	w.Header().Set("Access-Control-Allow-Methods", "DELETE, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
@@ -167,7 +199,15 @@ func HandleDeleteBudget(w http.ResponseWriter, r *http.Request, pool *pgxpool.Po
 }
 
 func HandleUpdateBudget(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
+	allowedOrigins := map[string]bool{
+		"https://deploy-preview-13--pocketwise.netlify.app": true,
+		"https://pocketwise.netlify.app":                    true,
+	}
+
+	origin := r.Header.Get("Origin")
+	if allowedOrigins[origin] {
+		w.Header().Set("Access-Control-Allow-Origin", origin)
+	}
 	w.Header().Set("Access-Control-Allow-Methods", "DELETE, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 

@@ -12,7 +12,15 @@ import (
 )
 
 func HandleUserLogin(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
+	allowedOrigins := map[string]bool{
+		"https://deploy-preview-13--pocketwise.netlify.app": true,
+		"https://pocketwise.netlify.app":                    true,
+	}
+
+	origin := r.Header.Get("Origin")
+	if allowedOrigins[origin] {
+		w.Header().Set("Access-Control-Allow-Origin", origin)
+	}
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 
