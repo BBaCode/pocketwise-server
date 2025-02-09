@@ -19,7 +19,7 @@ import (
 // through transactions. The "HandleAddAccounts" gets accounts into DB and thats
 // then used for all of the transactions
 func HandleGetAccounts(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Origin", "https://deploy-preview-13--pocketwise.netlify.app, https://pocketwise.netlify.app")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
@@ -60,7 +60,7 @@ func HandleGetAccounts(w http.ResponseWriter, r *http.Request, pool *pgxpool.Poo
 // If a user needs to add new accounts, they need to go to simplefin first I believe,
 // but maybe there is an API that can do it programmaticly
 func HandleAddAccounts(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Origin", "https://deploy-preview-13--pocketwise.netlify.app, https://pocketwise.netlify.app")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
@@ -126,7 +126,7 @@ func HandleAddAccounts(w http.ResponseWriter, r *http.Request, pool *pgxpool.Poo
 }
 
 func HandleGetUpdatedAccountData(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Origin", "https://deploy-preview-13--pocketwise.netlify.app, https://pocketwise.netlify.app")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
