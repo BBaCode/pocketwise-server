@@ -137,98 +137,82 @@ func HandleAddAccounts(w http.ResponseWriter, r *http.Request, pool *pgxpool.Poo
 	}
 }
 
-func HandleGetUpdatedAccountData(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool) {
+func UpdateAccountData(pool *pgxpool.Pool) error {
 	fmt.Println("Updating account data for all accounts and transactions at", time.Now())
-	// allowedOrigins := constants.AllowedOrigins
-
-	// origin := r.Header.Get("Origin")
-	// if allowedOrigins[origin] {
-	// 	w.Header().Set("Access-Control-Allow-Origin", origin)
-	// }
-	// w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-	// w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-
-	// // Extract user ID from request header (set by middleware)
-	// userID := r.Header.Get("X-User-ID")
-	// if userID == "" {
-	// 	http.Error(w, "Unauthorized", http.StatusUnauthorized)
-	// 	return
-	// }
-
-	// THIS MAY BE USED TO VALIDATE AT SOME POINT BUT NOT FOR NOW
-	// userUUID, err := uuid.Parse(userID)
-	// if err != nil {
-	// 	log.Printf("Invalid user ID: %v\n", err)
-	// 	http.Error(w, "Invalid user ID", http.StatusBadRequest)
-	// 	return
-	// }
 
 	startDate, err := db.FetchMostRecentTransactionForAllAccounts(pool)
 	if err != nil {
-		http.Error(w, "Something went wrong. Please try again later.", http.StatusInternalServerError)
-		log.Fatalf("Failed to get successful response from FetchMostRecentTransaction: %s", err)
+		return fmt.Errorf("failed to get most recent transaction: %w", err)
 	}
 
 	req, err := http.NewRequest("GET", fmt.Sprintf("https://beta-bridge.simplefin.org/simplefin/accounts?start-date=%d", startDate), nil)
 	if err != nil {
-		log.Fatalf("Failed to create request: %v", err)
+		return fmt.Errorf("failed to create request: %w", err)
 	}
 
-	req.SetBasicAuth(os.Getenv("SIMPLE_FIN_USERNAME"), os.Getenv("SIMPLE_FIN_PASSWORD")) // Split username and password
+	req.SetBasicAuth(os.Getenv("SIMPLE_FIN_USERNAME"), os.Getenv("SIMPLE_FIN_PASSWORD"))
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		http.Error(w, "Failed to get accounts", http.StatusForbidden)
+		return fmt.Errorf("failed to get accounts: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		log.Fatalf("Failed to get accounts: %s", body)
+		return fmt.Errorf("failed to get accounts: %s", body)
 	}
 
-	// account response parsed from the body
 	var accountsResponse models.AccountResponse
 	if err := json.NewDecoder(resp.Body).Decode(&accountsResponse); err != nil {
-		log.Fatalf("Failed to decode accounts response: %v", err)
+		return fmt.Errorf("failed to decode accounts response: %w", err)
 	}
 
 	for _, account := range accountsResponse.Accounts {
-		// Assume each account has a list of transactions (you may need to retrieve this separately if not included)
-		var updatedAccountData models.UpdatedAccountData
-		updatedAccountData.ID = account.ID
-		updatedAccountData.AvailableBalance = account.AvailableBalance
-		updatedAccountData.Balance = account.Balance
-		updatedAccountData.BalanceDate = account.BalanceDate
+		updatedAccountData := models.UpdatedAccountData{
+			ID:               account.ID,
+			AvailableBalance: account.AvailableBalance,
+			Balance:          account.Balance,
+			BalanceDate:      account.BalanceDate,
+		}
+
 		db.UpdateExistingAccounts(updatedAccountData, pool)
 
 		var categorizedTxns []models.Transaction
-		// categorize transactions and append them to a new array to send to database
 		for _, txn := range account.Transactions {
 			category, err := db.FetchCategoryByPayee(txn, pool)
+			if err != nil {
+				return fmt.Errorf("failed to fetch category: %w", err)
+			}
 			if len(category) > 0 {
 				txn.Category = category
 			} else {
 				txn, err = app.CategorizeTransaction(&txn)
+				if err != nil {
+					return fmt.Errorf("failed to categorize transaction: %w", err)
+				}
 			}
 			txn.AccountID = account.ID
-			if err != nil {
-				log.Fatalf("Failed to categorize transactions with error: %s", err)
-			}
 			categorizedTxns = append(categorizedTxns, txn)
 		}
 
-		// insert new transactions into the database
-		err = db.InsertNewTransactions(categorizedTxns, pool)
-		if err != nil {
-			log.Fatalf("Failed to insert transactions with error: %s", err)
+		if err := db.InsertNewTransactions(categorizedTxns, pool); err != nil {
+			return fmt.Errorf("failed to insert transactions: %w", err)
 		}
 	}
 
-	// Send JSON response to the client
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(accountsResponse); err != nil {
-		http.Error(w, "Failed to send accounts response", http.StatusInternalServerError)
+	return nil
+}
+
+// HTTP Handler Function
+func HandleGetUpdatedAccountData(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool) {
+	if err := UpdateAccountData(pool); err != nil {
+		http.Error(w, "Failed to update account data", http.StatusInternalServerError)
+		log.Println(err)
+		return
 	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Account data updated successfully"))
 }

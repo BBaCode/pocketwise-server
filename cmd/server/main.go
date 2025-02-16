@@ -4,13 +4,16 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	config "github.com/BBaCode/pocketwise-server/internal/app"
 	"github.com/BBaCode/pocketwise-server/internal/app/handlers"
 	"github.com/BBaCode/pocketwise-server/internal/app/middleware"
 	"github.com/BBaCode/pocketwise-server/internal/db"
 	"github.com/gorilla/mux"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
+	"github.com/robfig/cron/v3"
 )
 
 func main() {
@@ -97,6 +100,8 @@ func main() {
 
 	log.Println("Server starting on :80")
 
+	startScheduledTask(pool)
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
@@ -104,4 +109,18 @@ func main() {
 	if err := http.ListenAndServe(":"+port, r); err != nil {
 		log.Fatalf("ListenAndServe failed: %v\n", err)
 	}
+
+}
+
+func startScheduledTask(pool *pgxpool.Pool) {
+	c := cron.New(cron.WithLocation(time.FixedZone("EST", -5*60*60))) // Set timezone to EST
+	_, err := c.AddFunc("0 6 * * *", func() {                         // Runs every day at 6 AM
+		log.Println("Running daily account update task at 6 AM ET...")
+		handlers.HandleGetUpdatedAccountData(nil, nil, pool)
+		log.Println("Account data update completed.")
+	})
+	if err != nil {
+		log.Fatalf("Failed to schedule cron job: %v", err)
+	}
+	c.Start()
 }
