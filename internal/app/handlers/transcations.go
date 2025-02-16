@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"github.com/BBaCode/pocketwise-server/internal/app"
+	"github.com/BBaCode/pocketwise-server/internal/app/constants"
 	"github.com/BBaCode/pocketwise-server/internal/db"
 	"github.com/BBaCode/pocketwise-server/models"
 	"github.com/google/uuid"
@@ -16,10 +17,7 @@ import (
 )
 
 func HandleGetAllTransactions(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool) {
-	allowedOrigins := map[string]bool{
-		"https://deploy-preview-13--pocketwise.netlify.app": true,
-		"https://pocketwise.netlify.app":                    true,
-	}
+	allowedOrigins := constants.AllowedOrigins
 
 	origin := r.Header.Get("Origin")
 	if allowedOrigins[origin] {
@@ -68,10 +66,7 @@ func HandleGetAllTransactions(w http.ResponseWriter, r *http.Request, pool *pgxp
 }
 
 func HandleGetTransactions(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool) {
-	allowedOrigins := map[string]bool{
-		"https://deploy-preview-13--pocketwise.netlify.app": true,
-		"https://pocketwise.netlify.app":                    true,
-	}
+	allowedOrigins := constants.AllowedOrigins
 
 	origin := r.Header.Get("Origin")
 	if allowedOrigins[origin] {
@@ -177,10 +172,7 @@ func HandleGetTransactions(w http.ResponseWriter, r *http.Request, pool *pgxpool
 	}
 }
 func HandleUpdateTransactions(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool) {
-	allowedOrigins := map[string]bool{
-		"https://deploy-preview-13--pocketwise.netlify.app": true,
-		"https://pocketwise.netlify.app":                    true,
-	}
+	allowedOrigins := constants.AllowedOrigins
 
 	origin := r.Header.Get("Origin")
 	if allowedOrigins[origin] {

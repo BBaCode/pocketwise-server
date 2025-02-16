@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/BBaCode/pocketwise-server/internal/app/constants"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -13,10 +14,7 @@ func ValidateJWT(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Handle CORS preflight - without this, server was preventing subsequent calls
 		if r.Method == http.MethodOptions {
-			allowedOrigins := map[string]bool{
-				"https://deploy-preview-13--pocketwise.netlify.app": true,
-				"https://pocketwise.netlify.app":                    true,
-			}
+			allowedOrigins := constants.AllowedOrigins
 
 			origin := r.Header.Get("Origin")
 			if allowedOrigins[origin] {

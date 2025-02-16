@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/BBaCode/pocketwise-server/internal/app/constants"
 	"github.com/BBaCode/pocketwise-server/internal/db"
 	"github.com/BBaCode/pocketwise-server/models"
 	"github.com/gorilla/mux"
@@ -13,10 +14,7 @@ import (
 )
 
 func HandleGetBudget(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool) {
-	allowedOrigins := map[string]bool{
-		"https://deploy-preview-13--pocketwise.netlify.app": true,
-		"https://pocketwise.netlify.app":                    true,
-	}
+	allowedOrigins := constants.AllowedOrigins
 
 	origin := r.Header.Get("Origin")
 	if allowedOrigins[origin] {
@@ -62,10 +60,7 @@ func HandleGetBudget(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool)
 }
 
 func HandleGetAllBudgets(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool) {
-	allowedOrigins := map[string]bool{
-		"https://deploy-preview-13--pocketwise.netlify.app": true,
-		"https://pocketwise.netlify.app":                    true,
-	}
+	allowedOrigins := constants.AllowedOrigins
 
 	origin := r.Header.Get("Origin")
 	if allowedOrigins[origin] {
@@ -95,10 +90,7 @@ func HandleGetAllBudgets(w http.ResponseWriter, r *http.Request, pool *pgxpool.P
 }
 
 func HandleAddNewBudget(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool) {
-	allowedOrigins := map[string]bool{
-		"https://deploy-preview-13--pocketwise.netlify.app": true,
-		"https://pocketwise.netlify.app":                    true,
-	}
+	allowedOrigins := constants.AllowedOrigins
 
 	origin := r.Header.Get("Origin")
 	if allowedOrigins[origin] {
@@ -154,10 +146,7 @@ func HandleAddNewBudget(w http.ResponseWriter, r *http.Request, pool *pgxpool.Po
 }
 
 func HandleDeleteBudget(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool) {
-	allowedOrigins := map[string]bool{
-		"https://deploy-preview-13--pocketwise.netlify.app": true,
-		"https://pocketwise.netlify.app":                    true,
-	}
+	allowedOrigins := constants.AllowedOrigins
 
 	origin := r.Header.Get("Origin")
 	if allowedOrigins[origin] {
@@ -199,10 +188,7 @@ func HandleDeleteBudget(w http.ResponseWriter, r *http.Request, pool *pgxpool.Po
 }
 
 func HandleUpdateBudget(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool) {
-	allowedOrigins := map[string]bool{
-		"https://deploy-preview-13--pocketwise.netlify.app": true,
-		"https://pocketwise.netlify.app":                    true,
-	}
+	allowedOrigins := constants.AllowedOrigins
 
 	origin := r.Header.Get("Origin")
 	if allowedOrigins[origin] {

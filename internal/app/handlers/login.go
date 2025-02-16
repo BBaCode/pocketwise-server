@@ -6,16 +6,14 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/BBaCode/pocketwise-server/internal/app/constants"
 	"github.com/BBaCode/pocketwise-server/models" // Import JWT library
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func HandleUserLogin(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool) {
-	allowedOrigins := map[string]bool{
-		"https://deploy-preview-13--pocketwise.netlify.app": true,
-		"https://pocketwise.netlify.app":                    true,
-	}
+	allowedOrigins := constants.AllowedOrigins
 
 	origin := r.Header.Get("Origin")
 	if allowedOrigins[origin] {

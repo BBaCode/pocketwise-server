@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"github.com/BBaCode/pocketwise-server/internal/app"
+	"github.com/BBaCode/pocketwise-server/internal/app/constants"
 	"github.com/BBaCode/pocketwise-server/internal/db"
 	"github.com/BBaCode/pocketwise-server/models"
 	"github.com/google/uuid"
@@ -19,10 +20,7 @@ import (
 // through transactions. The "HandleAddAccounts" gets accounts into DB and thats
 // then used for all of the transactions
 func HandleGetAccounts(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool) {
-	allowedOrigins := map[string]bool{
-		"https://deploy-preview-13--pocketwise.netlify.app": true,
-		"https://pocketwise.netlify.app":                    true,
-	}
+	allowedOrigins := constants.AllowedOrigins
 
 	origin := r.Header.Get("Origin")
 	if allowedOrigins[origin] {
@@ -68,10 +66,7 @@ func HandleGetAccounts(w http.ResponseWriter, r *http.Request, pool *pgxpool.Poo
 // If a user needs to add new accounts, they need to go to simplefin first I believe,
 // but maybe there is an API that can do it programmaticly
 func HandleAddAccounts(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool) {
-	allowedOrigins := map[string]bool{
-		"https://deploy-preview-13--pocketwise.netlify.app": true,
-		"https://pocketwise.netlify.app":                    true,
-	}
+	allowedOrigins := constants.AllowedOrigins
 
 	origin := r.Header.Get("Origin")
 	if allowedOrigins[origin] {
@@ -142,10 +137,7 @@ func HandleAddAccounts(w http.ResponseWriter, r *http.Request, pool *pgxpool.Poo
 }
 
 func HandleGetUpdatedAccountData(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool) {
-	allowedOrigins := map[string]bool{
-		"https://deploy-preview-13--pocketwise.netlify.app": true,
-		"https://pocketwise.netlify.app":                    true,
-	}
+	allowedOrigins := constants.AllowedOrigins
 
 	origin := r.Header.Get("Origin")
 	if allowedOrigins[origin] {
