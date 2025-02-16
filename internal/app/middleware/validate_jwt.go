@@ -27,6 +27,16 @@ func ValidateJWT(next http.Handler) http.Handler {
 		}
 
 		authHeader := r.Header.Get("Authorization")
+
+		// Check for service account auth header
+		serviceKey := os.Getenv("SUPABASE_SERVICE_KEY")
+
+		if authHeader == "Bearer "+serviceKey {
+			// Allow the request (it's a cron job using the service key)
+			next.ServeHTTP(w, r)
+			return
+		}
+
 		if len(authHeader) == 0 {
 			fmt.Println("Auth header is missing")
 			http.Error(w, "Authorization header missing", http.StatusUnauthorized)

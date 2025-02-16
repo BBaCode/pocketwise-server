@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/BBaCode/pocketwise-server/internal/app"
 	"github.com/BBaCode/pocketwise-server/internal/app/constants"
@@ -137,21 +138,22 @@ func HandleAddAccounts(w http.ResponseWriter, r *http.Request, pool *pgxpool.Poo
 }
 
 func HandleGetUpdatedAccountData(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool) {
-	allowedOrigins := constants.AllowedOrigins
+	fmt.Println("Updating account data for all accounts and transactions at", time.Now())
+	// allowedOrigins := constants.AllowedOrigins
 
-	origin := r.Header.Get("Origin")
-	if allowedOrigins[origin] {
-		w.Header().Set("Access-Control-Allow-Origin", origin)
-	}
-	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+	// origin := r.Header.Get("Origin")
+	// if allowedOrigins[origin] {
+	// 	w.Header().Set("Access-Control-Allow-Origin", origin)
+	// }
+	// w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+	// w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
-	// Extract user ID from request header (set by middleware)
-	userID := r.Header.Get("X-User-ID")
-	if userID == "" {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
-	}
+	// // Extract user ID from request header (set by middleware)
+	// userID := r.Header.Get("X-User-ID")
+	// if userID == "" {
+	// 	http.Error(w, "Unauthorized", http.StatusUnauthorized)
+	// 	return
+	// }
 
 	// THIS MAY BE USED TO VALIDATE AT SOME POINT BUT NOT FOR NOW
 	// userUUID, err := uuid.Parse(userID)
